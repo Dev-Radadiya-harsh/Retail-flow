@@ -25,7 +25,9 @@ Open **http://localhost:5173**. See **`Q&A.txt`** for details and default logins
 ## Docs
 
 - **`Q&A.txt`** — how everything works locally  
-- **`DEPLOYMENT.md`** — Firebase Hosting + Render  
+- **`DEPLOYMENT.md`** — Firebase Hosting + Render (full detail)  
+- **`DEPLOY-QUICK.txt`** — shortest deploy checklist  
+- **`frontend/env.production.template`** — copy to `frontend/.env.production` before `npm run build` for production  
 - **`frontend/README.md`** / **`backend/README.md`** — per-folder notes  
 
 ## Scripts (from repo root)

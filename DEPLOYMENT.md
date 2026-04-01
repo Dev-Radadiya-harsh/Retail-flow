@@ -4,6 +4,16 @@ This guide walks through hosting the **React app** on **Firebase Hosting** and t
 
 ---
 
+## Deployment order (do this sequence)
+
+1. **Create a Firebase project** in the [Firebase Console](https://console.firebase.google.com/) (you only need the **project ID** for now). Your site URL will be `https://YOUR-PROJECT-ID.web.app` and `https://YOUR-PROJECT-ID.firebaseapp.com` — you can set these in Render even before Hosting is live.
+2. **Deploy the backend on Render** (Part A) — get your API URL like `https://xxxx.onrender.com`.
+3. **Build the frontend** with `VITE_API_BASE_URL` pointing at that Render URL (Part B).
+4. **Deploy the frontend to Firebase Hosting** (Part C).
+5. **On Render**, set **`FRONTEND_ORIGIN`** to your real Firebase URLs (comma-separated, no spaces). **Redeploy** the Render service or save env so CORS allows your site. If login fails with CORS, this step was missed or the URL does not match exactly.
+
+---
+
 ## What you need
 
 - A [Firebase](https://console.firebase.google.com/) project (free Spark plan is enough for Hosting).

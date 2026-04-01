@@ -43,7 +43,18 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
-      const data = await res.json();
+
+      const raw = await res.text();
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        return {
+          success: false,
+          error:
+            'The app could not read the server response. On Firebase Hosting, create frontend/.env.production with VITE_API_BASE_URL=https://YOUR-RENDER.onrender.com/api, then run npm run build and deploy again.',
+        };
+      }
 
       if (!res.ok) {
         return { success: false, error: data.error || 'Login failed. Please try again.' };
@@ -63,7 +74,11 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (err) {
       console.error('Login error:', err);
-      return { success: false, error: 'Network error. Check your connection.' };
+      return {
+        success: false,
+        error:
+          'Could not reach the API. Check that the backend is running on Render and that VITE_API_BASE_URL is set before building the frontend.',
+      };
     }
   };
 

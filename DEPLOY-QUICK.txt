@@ -1,0 +1,22 @@
+================================================================================
+  FIREBASE + RENDER — MINIMUM STEPS (RetailFlow)
+================================================================================
+
+1) BACKEND (Render)
+   - Root Directory: backend
+   - Build: npm install   Start: node index.js
+   - Env: NODE_ENV=production, JWT_SECRET=(random), FRONTEND_ORIGIN=(your .web.app and .firebaseapp.com, comma, no spaces)
+   - Do NOT set PORT manually.
+   - Test: https://YOUR-SERVICE.onrender.com/api/health
+
+2) FRONTEND (before firebase deploy)
+   From RetailFlow repo root:
+   - Copy:  frontend/env.production.template  →  frontend/.env.production
+   - Edit frontend/.env.production: set VITE_API_BASE_URL to your Render URL + /api
+   - Run:   npm install
+           npm run build
+   - Run:   firebase deploy --only hosting   (from repo root, where firebase.json is)
+
+3) If login still fails: FRONTEND_ORIGIN on Render must match the exact URL you open in the browser.
+
+================================================================================
