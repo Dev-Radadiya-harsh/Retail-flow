@@ -1,0 +1,266 @@
+================================================================================
+  RETAILFLOW — PROJECT Q&A (BEGINNER-FRIENDLY)
+================================================================================
+
+This file explains what RetailFlow is, what technologies it uses, how the
+pieces fit together, and exactly what you need to do to run it on your
+computer. You do NOT need to install MySQL, PostgreSQL, or MongoDB separately.
+
+
+--------------------------------------------------------------------------------
+1. WHAT IS THIS PROJECT?
+--------------------------------------------------------------------------------
+
+RetailFlow is a small retail / point-of-sale style web application:
+
+  • Store owners and employees can view products, add items to a cart, and
+    record sales (stock goes down when you complete a sale).
+
+  • A "manager" role can create shops and assign shop owners.
+
+  • An "owner" role sees dashboards, sales history, and can manage team
+    members for their shop.
+
+  • An "employee" role mainly uses billing / checkout for their own session.
+
+It is one repository with TWO main folders:
+
+  (A) FRONTEND  — folder `frontend/` — the website (React + Vite), all UI code.
+  (B) BACKEND   — folder `backend/` — API (Node.js + Express) and SQLite file.
+
+
+--------------------------------------------------------------------------------
+2. WHAT TECHNOLOGIES DOES IT USE?
+--------------------------------------------------------------------------------
+
+FRONTEND (folder: `frontend/`)
+  • React        — UI in `frontend/src/`
+  • Vite         — dev server and build (port 5173); config `frontend/vite.config.js`
+  • Tailwind CSS — `frontend/tailwind.config.js`, `frontend/src/index.css`
+  • Chart.js     — charts on dashboards
+  • React Router — URLs like /login, /owner, /employee
+
+BACKEND (folder: `backend/`)
+  • Node.js      — JavaScript runtime on your machine
+  • Express      — HTTP API (REST routes under `/api/...`)
+  • JSON Web Tokens (JWT) — after login, the browser stores a token; each
+    API request sends "Bearer <token>" so the server knows who you are
+
+DATABASE
+  • SQLite       — data is stored in ONE FILE: `backend/db/retailflow.db`
+  • better-sqlite3 — Node library that opens that file directly
+
+There is NO separate "database server" program (unlike MySQL). When you start
+the backend, it opens `retailflow.db` automatically. You do not start SQLite
+as a service.
+
+
+--------------------------------------------------------------------------------
+3. HOW DOES EVERYTHING WORK TOGETHER? (BIG PICTURE)
+--------------------------------------------------------------------------------
+
+  [ Browser ]  -->  http://localhost:5173  (Vite / React)
+       |
+       |  User logs in: email + password sent to the API
+       v
+  [ Vite dev proxy ]  forwards `/api/*`  -->  http://localhost:3001
+       |
+       v
+  [ Express server ]  (`backend/index.js`, port 3001)
+       |
+       |  Reads/writes
+       v
+  [ SQLite file ]  `backend/db/retailflow.db`
+
+LOGIN FLOW (simplified):
+  1. User submits email + password on the login page.
+  2. Frontend sends POST to `/api/auth/email-login`.
+  3. Backend looks up the user in SQLite, checks password (hashed).
+  4. If OK, backend returns a JWT + user info (id, name, role, email).
+  5. Frontend saves the token in `localStorage` and uses it for later
+     requests (products, sales, users, shops).
+
+So: the "database" is always used through the backend. The React app never
+connects to SQLite directly in the browser.
+
+
+--------------------------------------------------------------------------------
+4. DO I NEED TO RUN THE BACKEND? DO I NEED TO "START" THE DATABASE?
+--------------------------------------------------------------------------------
+
+YES — you need the backend running for login, products, sales, users, shops.
+
+NO — you do NOT start SQLite separately. The database is just a file. When
+the Node server starts, it creates/opens `backend/db/retailflow.db` and runs
+tables creation if needed.
+
+If the backend is NOT running:
+  • Login will fail or show network errors.
+  • Dashboards will not load real data.
+
+Always run BOTH frontend and backend during development (see section 6).
+
+
+--------------------------------------------------------------------------------
+5. WHAT IS IN THE DATABASE FILE?
+--------------------------------------------------------------------------------
+
+Location: `backend/db/retailflow.db`
+
+Main tables (created by `backend/db/database.js`):
+  • shops   — store names (manager creates these)
+  • users   — logins, roles (manager / owner / employee), optional shop link
+  • products — name, price, stock, category, shop
+  • sales   — each sale, line items stored as JSON, total, who created it
+
+On first run with an EMPTY database, `backend/db/seed.js` runs from
+`backend/index.js` and adds:
+  • a sample shop
+  • sample users (manager, owner, employee)
+  • sample products
+
+If you DELETE `retailflow.db` and restart the server, seeding runs again.
+
+IMPORTANT: If you already have a `retailflow.db` with data, the seed step
+skips (it checks if shops already exist). So you keep your existing users.
+
+
+--------------------------------------------------------------------------------
+6. HOW TO RUN THE PROJECT (STEP BY STEP)
+--------------------------------------------------------------------------------
+
+ONE-TIME SETUP (from the RetailFlow folder):
+
+  1. Install Node.js (LTS) from https://nodejs.org if you do not have it.
+
+  2. Install dependencies (once, from the repo root only):
+       npm install
+
+     This project uses npm workspaces: one install pulls in frontend, backend,
+     and shared dev tools. You should see a single `node_modules` folder at the
+     root (not required under `frontend/` or `backend/` for normal dev).
+
+OPTIONAL — backend environment file `backend/.env`:
+  You can create `backend/.env` for secrets. Common variables:
+    PORT=3001
+    JWT_SECRET=your-long-random-secret-string
+  If JWT_SECRET is missing, the code uses a default (fine for local dev only).
+
+START EVERYTHING (recommended — one command):
+
+  From the RetailFlow project root (not inside `backend/` only for installs):
+
+       npm run dev:all
+
+  This runs:
+    • Vite  →  http://localhost:5173  (frontend)
+    • Node  →  http://localhost:3001  (backend API)
+
+  Open the browser at: http://localhost:5173
+
+ALTERNATIVE — two terminals:
+
+  Terminal 1:
+       npm run dev
+
+  Terminal 2:
+       npm run backend:dev
+
+BUILD FOR PRODUCTION (static files only):
+
+       npm run build
+
+  Output goes to `frontend/dist/`. Serving those files still requires the API
+  running somewhere (or configure `VITE_API_BASE_URL` — see DEPLOYMENT.md).
+
+
+--------------------------------------------------------------------------------
+7. DEFAULT LOGIN ACCOUNTS (AFTER FRESH SEED)
+--------------------------------------------------------------------------------
+
+These are created ONLY when the database is empty and seed runs.
+
+  Role: Manager
+    Email:    manager@gmail.com
+    Password: MANAGER123
+
+  Role: Owner
+    Email:    owner@retailflow.in
+    Password: owner123
+
+  Role: Employee
+    Email:    priya@retailflow.in
+    Password: priya123
+
+If you cannot log in:
+  • Make sure `npm run dev:all` is running (backend on 3001).
+  • Try stopping the server, deleting `backend/db/retailflow.db`, starting again
+    (this wipes data and re-seeds).
+
+Passwords are stored HASHED in SQLite (bcrypt); you never store plain text
+passwords in the DB manually for the app to work.
+
+
+--------------------------------------------------------------------------------
+8. USEFUL COMMANDS REFERENCE
+--------------------------------------------------------------------------------
+
+  npm run dev          — frontend only (Vite)
+  npm run backend:dev  — backend only (Express)
+  npm run dev:all      — both (use this for normal work)
+  npm run build        — production build of frontend
+  npm run lint         — check code style
+  npm run preview      — preview `frontend/dist` locally (still needs API for data)
+
+
+--------------------------------------------------------------------------------
+9. FILE / FOLDER MAP (WHERE TO LOOK)
+--------------------------------------------------------------------------------
+
+  frontend/src/App.jsx     — routes (login, dashboards)
+  frontend/src/pages/      — Login, Owner, Employee, Manager, Settings, etc.
+  frontend/src/context/    — React state (auth, app data, toasts)
+  frontend/src/services/api.js — `fetch` to `/api/...` (or full URL in production)
+  frontend/vite.config.js  — proxies `/api` → localhost:3001 in dev
+  backend/index.js          — Express app entry, mounts routes
+  backend/routes/           — auth, products, sales, users, shops
+  backend/db/database.js    — SQLite connection + table definitions
+  backend/db/seed.js      — initial data when DB is empty
+  backend/db/retailflow.db  — the actual database file (SQLite)
+
+
+--------------------------------------------------------------------------------
+10. SECURITY NOTES (SHORT)
+--------------------------------------------------------------------------------
+
+  • Do not commit real passwords or production secrets to git.
+  • `backend/.env` is listed in `.gitignore` — keep secrets there.
+  • For production, use a strong `JWT_SECRET` and HTTPS.
+  • CORS in `backend/index.js` is set for local dev (localhost:5173); you would
+    change that for a deployed domain.
+
+
+--------------------------------------------------------------------------------
+11. TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+  "Network error" on login
+    → Backend not running or wrong port. Check terminal for errors on 3001.
+
+  "401 Unauthorized" on pages
+    → Token expired or invalid. Log out and log in again.
+
+  Empty products / no data
+    → Backend down, or DB not seeded. Delete `retailflow.db` and restart once.
+
+  Port already in use (3001 or 5173)
+    → Another app uses that port. Stop the other process or change PORT in
+      `backend/.env` and match `frontend/vite.config.js` proxy if you change API port.
+
+  Module errors after `git pull`
+    → From repo root: `npm install`
+
+
+================================================================================
+  End of Q&A — RetailFlow
+================================================================================
