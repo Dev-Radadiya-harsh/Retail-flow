@@ -1,8 +1,22 @@
 require('dotenv').config();
+const fs = require('fs');
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'retailflow.db');
+// Default: repo-local file. Production (e.g. Render): set DATABASE_PATH to a file on a persistent disk, e.g. /var/data/retailflow.db
+const DB_PATH = process.env.DATABASE_PATH
+  ? path.resolve(process.env.DATABASE_PATH)
+  : path.join(__dirname, 'retailflow.db');
+
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+if (process.env.NODE_ENV === 'production') {
+  console.log('[database] SQLite file:', DB_PATH);
+}
+
 const db = new Database(DB_PATH);
 
 db.pragma('journal_mode = WAL');

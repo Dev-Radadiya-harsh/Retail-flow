@@ -23,11 +23,32 @@ This guide walks through hosting the **React app** on **Firebase Hosting** and t
 
 ---
 
-## Important: SQLite on Render
+## Important: SQLite on Render (why data “disappears”)
 
-This project uses **SQLite** (`backend/db/retailflow.db`). On Render, the filesystem is **ephemeral**: when the service restarts, redeploys, or sleeps, **the database file can be wiped or reset**. The app will re-seed empty data if the DB is missing.
+This project uses **SQLite**. By default the file is `backend/db/retailflow.db` next to the code.
 
-For a **school demo**, that is often acceptable. For **real production**, plan to move to **PostgreSQL** (Render offers managed Postgres) or attach a **persistent disk** (paid) and point SQLite there.
+On Render, the **container filesystem is ephemeral**: after a **redeploy**, **restart**, or sometimes when the instance is replaced, a database file stored only there can be **lost**. That is why shops/bills you created on the **hosted** app do not match **localhost** (different machines) and can **vanish** on Render unless the DB lives on **persistent storage**.
+
+**Localhost** always uses your computer’s SQLite file. **Hosted** uses whatever file the Render server uses — unless you set **`DATABASE_PATH`**, that is still ephemeral storage.
+
+### Keep SQLite across deploys (Render Persistent Disk)
+
+1. In Render: open your **Web Service** → **Disks** → **Add disk**.
+2. Set a **mount path** (common choice): `/var/data`.
+3. Pick a size (e.g. 1 GB) and save. Persistent disks require a **paid** instance type on Render (not the free web service in most cases — check Render’s current docs).
+4. Under **Environment**, add:
+
+| Key | Value |
+|-----|--------|
+| `DATABASE_PATH` | `/var/data/retailflow.db` |
+
+5. **Redeploy** the service. On startup, logs will show: `[database] SQLite file: /var/data/retailflow.db`.
+
+The app creates the parent directory if needed. All shops, users, products, and sales are then stored on the **disk**, not wiped on each deploy.
+
+### Longer term
+
+For heavy production use, consider **PostgreSQL** (Render managed Postgres) instead of SQLite.
 
 ---
 
@@ -59,6 +80,7 @@ Render deploys from a Git repository. Push the whole `RetailFlow` repo (includin
 | `NODE_ENV` | `production` |
 | `JWT_SECRET` | Long random string (generate e.g. `openssl rand -hex 32`) — **required** in production |
 | `FRONTEND_ORIGIN` | Your Firebase URL(s), comma-separated, **no spaces**: `https://your-project-id.web.app,https://your-project-id.firebaseapp.com` |
+| `DATABASE_PATH` | **Optional but recommended** if you attach a persistent disk: full path to the DB file, e.g. `/var/data/retailflow.db` (see **SQLite on Render** above). |
 | `PORT` | **Do not set manually** on Render — Render injects `PORT` automatically. |
 
 6. Deploy and wait until the service shows **Live**. Copy the URL, e.g. `https://retailflow-api-xxxx.onrender.com`.
