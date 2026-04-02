@@ -9,8 +9,9 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev -w retailflow-frontend",
-    "dev:all": "concurrently -n frontend,backend -c blue,green \"npm run dev -w retailflow-frontend\" \"cd backend && node index.js\"",
+    "dev": "concurrently -n frontend,backend -c blue,green \"npm run dev -w retailflow-frontend\" \"cd backend && node index.js\"",
+    "dev:frontend": "npm run dev -w retailflow-frontend",
+    "dev:all": "npm run dev",
     "backend:dev": "cd backend && node index.js",
     "build": "npm run build -w retailflow-frontend",
     "lint": "eslint .",

@@ -23,6 +23,24 @@ This guide walks through hosting the **React app** on **Firebase Hosting** and t
 
 ---
 
+## Local development (backend on your PC — Render optional)
+
+From the **repository root**:
+
+```bash
+npm install
+npm run dev
+```
+
+This starts **both** the React app (Vite, usually `http://localhost:5173`) and the **Express API** on port **3001**. The frontend uses `frontend/.env.development`, so requests go to `/api` and Vite proxies them to your local backend (see `frontend/vite.config.js`). Data is stored in `backend/db/retailflow.db` on your machine.
+
+- **Frontend only:** `npm run dev:frontend`
+- **Backend only:** `npm run backend:dev`
+
+Firebase Hosting + Render are **unchanged**; `npm run build` still uses `frontend/.env.production` when you deploy the hosted site.
+
+---
+
 ## Important: SQLite on Render (why data “disappears”)
 
 This project uses **SQLite**. By default the file is `backend/db/retailflow.db` next to the code.
