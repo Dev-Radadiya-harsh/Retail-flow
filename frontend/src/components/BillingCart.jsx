@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { formatCurrency, calculateCartTotal } from '../utils/helpers';
-import { jsPDF } from 'jspdf';
+import { downloadBillPdf, shareBillPdfOnWhatsApp } from '../utils/billPdf';
 
 const BillingCart = ({ onSaleComplete }) => {
   const { cart, updateCartItem, removeFromCart, clearCart, confirmSale } = useAppContext();
@@ -14,50 +14,6 @@ const BillingCart = ({ onSaleComplete }) => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const toast = useToast();
-
-  const createBillText = (sale) => {
-    const lines = [
-      `RetailFlow Bill ${sale.billNumber || `#${sale.id.slice(0, 8).toUpperCase()}`}`,
-      `Date: ${new Date(sale.dateTime).toLocaleString('en-IN')}`,
-      `Customer: ${sale.customerName || 'Walk-in'}`,
-      `Phone: ${sale.customerPhone || '-'}`,
-      '',
-      'Items:',
-    ];
-
-    sale.items.forEach((item) => {
-      lines.push(`- ${item.productName} x${item.quantity} = ${formatCurrency(item.total)}`);
-    });
-    lines.push('', `Total: ${formatCurrency(sale.totalAmount ?? sale.total ?? 0)}`);
-    return lines.join('\n');
-  };
-
-  const downloadBillPdf = (sale) => {
-    const doc = new jsPDF();
-    const top = 15;
-    doc.setFontSize(16);
-    doc.text('RetailFlow Bill', 14, top);
-    doc.setFontSize(11);
-    doc.text(`Bill No: ${sale.billNumber || sale.id}`, 14, top + 10);
-    doc.text(`Date: ${new Date(sale.dateTime).toLocaleString('en-IN')}`, 14, top + 17);
-    doc.text(`Customer: ${sale.customerName || 'Walk-in'}`, 14, top + 24);
-    doc.text(`Phone: ${sale.customerPhone || '-'}`, 14, top + 31);
-
-    let y = top + 42;
-    doc.setFontSize(12);
-    doc.text('Items', 14, y);
-    y += 8;
-    doc.setFontSize(10);
-    sale.items.forEach((item) => {
-      doc.text(`${item.productName} x${item.quantity}`, 14, y);
-      doc.text(formatCurrency(item.total), 175, y, { align: 'right' });
-      y += 6;
-    });
-    y += 4;
-    doc.setFontSize(12);
-    doc.text(`Total: ${formatCurrency(sale.totalAmount ?? sale.total ?? 0)}`, 14, y);
-    doc.save(`${sale.billNumber || sale.id}.pdf`);
-  };
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -99,16 +55,6 @@ const BillingCart = ({ onSaleComplete }) => {
 
   const handleClearCart = () => setShowClearConfirm(true);
   const executeClear = () => { clearCart(); setShowClearConfirm(false); toast.info('Cart cleared'); };
-
-  const handleWhatsAppShare = (sale) => {
-    if (!sale) return;
-    if (!sale.customerPhone) {
-      toast.warning('Customer WhatsApp number is missing for this bill');
-      return;
-    }
-    const message = createBillText(sale);
-    window.open(`https://wa.me/${sale.customerPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-  };
 
   const total = calculateCartTotal(cart);
 
@@ -267,19 +213,10 @@ const BillingCart = ({ onSaleComplete }) => {
                 Download Bill PDF
               </button>
               <button
-                onClick={() => {
-                  downloadBillPdf(completedSale);
-                  handleWhatsAppShare(completedSale);
-                }}
+                onClick={() => shareBillPdfOnWhatsApp(completedSale, { toast })}
                 className="btn btn-primary"
               >
-                Share Bill PDF on WhatsApp
-              </button>
-              <button
-                onClick={() => handleWhatsAppShare(completedSale)}
-                className="text-sm text-green-700 hover:text-green-800"
-              >
-                Share Bill Text on WhatsApp
+                Share bill PDF on WhatsApp
               </button>
               <button
                 onClick={() => setShowBillActions(false)}

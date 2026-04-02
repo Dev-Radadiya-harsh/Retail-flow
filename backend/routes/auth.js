@@ -33,6 +33,13 @@ router.post('/login', async (req, res) => {
 });
 
 // ── POST /api/auth/email-login (email + password → SQLite + JWT) ───────
+// GET is not supported (browser address bar uses GET) — avoid confusing "Cannot GET" page
+router.get('/email-login', (req, res) => {
+  res.status(405).json({
+    error: 'Use POST to sign in. Opening this URL in the browser does not log you in.',
+  });
+});
+
 router.post('/email-login', async (req, res) => {
   try {
     const { email, password } = req.body;

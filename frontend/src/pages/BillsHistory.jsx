@@ -3,7 +3,8 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import { salesAPI } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
-import { jsPDF } from 'jspdf';
+import { useToast } from '../context/ToastContext';
+import { downloadBillPdf, shareBillPdfOnWhatsApp } from '../utils/billPdf';
 
 const FILTERS = [
   { label: 'Last 7 Days', days: 7 },
@@ -11,58 +12,13 @@ const FILTERS = [
   { label: 'All Time', days: 0 },
 ];
 
-function createBillText(sale) {
-  const lines = [
-    `RetailFlow Bill ${sale.billNumber || `#${sale.id.slice(0, 8).toUpperCase()}`}`,
-    `Date: ${new Date(sale.dateTime).toLocaleString('en-IN')}`,
-    `Customer: ${sale.customerName || 'Walk-in'}`,
-    `Phone: ${sale.customerPhone || '-'}`,
-    '',
-    'Items:',
-  ];
-
-  sale.items.forEach((item) => {
-    lines.push(`- ${item.productName} x${item.quantity} = ${formatCurrency(item.total)}`);
-  });
-  lines.push('', `Total: ${formatCurrency(sale.totalAmount ?? sale.total ?? 0)}`);
-  return lines.join('\n');
-}
-
-function downloadBillPdf(sale) {
-  const doc = new jsPDF();
-  const top = 15;
-  doc.setFontSize(16);
-  doc.text('RetailFlow Bill', 14, top);
-  doc.setFontSize(11);
-  doc.text(`Bill No: ${sale.billNumber || sale.id}`, 14, top + 10);
-  doc.text(`Date: ${new Date(sale.dateTime).toLocaleString('en-IN')}`, 14, top + 17);
-  doc.text(`Customer: ${sale.customerName || 'Walk-in'}`, 14, top + 24);
-  doc.text(`Phone: ${sale.customerPhone || '-'}`, 14, top + 31);
-
-  let y = top + 42;
-  doc.setFontSize(12);
-  doc.text('Items', 14, y);
-  y += 8;
-  doc.setFontSize(10);
-  sale.items.forEach((item) => {
-    doc.text(`${item.productName} x${item.quantity}`, 14, y);
-    doc.text(formatCurrency(item.total), 175, y, { align: 'right' });
-    y += 6;
-  });
-
-  y += 4;
-  doc.setFontSize(12);
-  doc.text(`Total: ${formatCurrency(sale.totalAmount ?? sale.total ?? 0)}`, 14, y);
-  const file = `${sale.billNumber || sale.id}.pdf`;
-  doc.save(file);
-}
-
 const BillsHistory = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(30);
   const [expanded, setExpanded] = useState(null);
   const { user } = useAuth();
+  const toast = useToast();
 
   const fetchSales = useCallback(async () => {
     try {
@@ -171,14 +127,13 @@ const BillsHistory = () => {
                             >
                               PDF
                             </button>
-                            <a
-                              href={`https://wa.me/${sale.customerPhone || ''}?text=${encodeURIComponent(createBillText(sale))}`}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => shareBillPdfOnWhatsApp(sale, { toast })}
                               className="text-green-600 hover:text-green-700 font-medium"
                             >
                               WhatsApp
-                            </a>
+                            </button>
                           </div>
                         </td>
                         <td className="px-6 py-4">
