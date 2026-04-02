@@ -115,7 +115,7 @@ export function AppProvider({ children }) {
   const clearCart = () => setCart([]);
 
   // ── Sales ─────────────────────────────────────────────────────────────────
-  const confirmSale = async () => {
+  const confirmSale = async ({ customerName = '', customerPhone = '' } = {}) => {
     if (cart.length === 0) throw new Error('Cart is empty');
 
     const items = cart.map(item => ({
@@ -124,7 +124,7 @@ export function AppProvider({ children }) {
     }));
 
     // Post to API — backend handles stock deduction atomically
-    const sale = await salesAPI.create(items, sessionId);
+    const sale = await salesAPI.create(items, sessionId, { customerName, customerPhone });
 
     // Refresh products (stock changed) and sales from server
     await Promise.all([fetchProducts(), fetchSales()]);
@@ -134,11 +134,7 @@ export function AppProvider({ children }) {
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const getSales = (role) => {
-    if (role === 'owner') return sales;
-    // For employee: sales they personally created (matched by sessionId)
-    return sales.filter(s => s.sessionId === sessionId);
-  };
+  const getSales = (_role) => sales;
 
   const getLowStockProducts = () => products.filter(p => p.quantity < 5);
 

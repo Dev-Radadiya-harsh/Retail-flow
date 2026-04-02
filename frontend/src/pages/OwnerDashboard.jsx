@@ -8,7 +8,7 @@ import DoughnutChart from '../components/DoughnutChart';
 import ProductModal from '../components/ProductModal';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
-import { isThisMonth, formatCurrency, isLowStock } from '../utils/helpers';
+import { isToday, formatCurrency, isLowStock } from '../utils/helpers';
 
 const OwnerDashboard = () => {
   const { products, sales, addProduct, updateProduct, deleteProduct, loading } = useAppContext();
@@ -21,10 +21,13 @@ const OwnerDashboard = () => {
 
   // Calculate KPIs from real data
   const kpis = useMemo(() => {
-    const monthlySales = sales.filter(sale => isThisMonth(sale.dateTime));
+    const todaySales = sales.filter((sale) => isToday(sale.dateTime));
     
-    const monthlyRevenue = monthlySales.reduce((sum, sale) => sum + sale.total, 0);
-    const itemsSold = monthlySales.reduce((sum, sale) => {
+    const todayRevenue = todaySales.reduce(
+      (sum, sale) => sum + (sale.totalAmount ?? sale.total ?? 0),
+      0
+    );
+    const todayItemsSold = todaySales.reduce((sum, sale) => {
       return sum + sale.items.reduce((s, item) => s + item.quantity, 0);
     }, 0);
     const lowStockCount = products.filter(isLowStock).length;
@@ -36,8 +39,8 @@ const OwnerDashboard = () => {
       : 0;
 
     return {
-      monthlyRevenue,
-      itemsSold,
+      todayRevenue,
+      todayItemsSold,
       lowStockCount,
       inventoryHealth
     };
@@ -104,7 +107,7 @@ const OwnerDashboard = () => {
     sales.forEach(sale => {
       const saleDate = new Date(sale.dateTime);
       const monthIndex = saleDate.getMonth();
-      revenueByMonth[monthIndex] += sale.total;
+      revenueByMonth[monthIndex] += (sale.totalAmount ?? sale.total ?? 0);
     });
 
     // Category sales
@@ -240,14 +243,14 @@ const OwnerDashboard = () => {
       {/* KPI Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <KPICard
-          title="Monthly Revenue"
-          value={kpis.monthlyRevenue}
+          title="Today's Revenue"
+          value={kpis.todayRevenue}
           icon="💰"
           prefix="₹"
         />
         <KPICard
-          title="Items Sold (Monthly)"
-          value={kpis.itemsSold}
+          title="Items Sold Today"
+          value={kpis.todayItemsSold}
           icon="📦"
         />
         <KPICard

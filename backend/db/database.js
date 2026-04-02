@@ -42,9 +42,12 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS sales (
     id TEXT PRIMARY KEY,
+    billNumber TEXT,
     dateTime TEXT NOT NULL,
     items TEXT NOT NULL,
     totalAmount REAL NOT NULL,
+    customerName TEXT DEFAULT '',
+    customerPhone TEXT DEFAULT '',
     createdBy TEXT NOT NULL,
     sessionId TEXT,
     shop_id TEXT DEFAULT NULL,
@@ -52,5 +55,17 @@ db.exec(`
     FOREIGN KEY(shop_id) REFERENCES shops(id) ON DELETE CASCADE
   );
 `);
+
+function addColumnIfMissing(table, columnName, definition) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  const exists = cols.some((c) => c.name === columnName);
+  if (!exists) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
+addColumnIfMissing('sales', 'billNumber', "TEXT");
+addColumnIfMissing('sales', 'customerName', "TEXT DEFAULT ''");
+addColumnIfMissing('sales', 'customerPhone', "TEXT DEFAULT ''");
 
 module.exports = db;

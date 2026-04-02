@@ -9,6 +9,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import UserManagement from './pages/UserManagement';
 import SalesHistory from './pages/SalesHistory';
+import BillsHistory from './pages/BillsHistory';
 import Settings from './pages/Settings';
 import ManagerDashboard from './pages/ManagerDashboard';
 
@@ -63,6 +64,7 @@ function App() {
                 {/* Owner */}
                 <Route path="/owner"    element={<OwnerDashboard />} />
                 <Route path="/sales"    element={<SalesHistory />} />
+                <Route path="/bills"    element={<BillsHistory />} />
                 <Route path="/users"    element={<UserManagement />} />
                 <Route path="/settings" element={<Settings />} />
 

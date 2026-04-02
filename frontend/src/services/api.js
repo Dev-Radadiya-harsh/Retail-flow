@@ -85,7 +85,16 @@ export const productsAPI = {
 // ── Sales ─────────────────────────────────────────────────────────────────────
 export const salesAPI = {
   getAll:  ()                   => request('/sales'),
-  create:  (items, sessionId)   => request('/sales', { method: 'POST', body: JSON.stringify({ items, sessionId }) }),
+  create:  (items, sessionId, customer = {}) =>
+    request('/sales', {
+      method: 'POST',
+      body: JSON.stringify({
+        items,
+        sessionId,
+        customerName: customer.customerName || '',
+        customerPhone: customer.customerPhone || '',
+      }),
+    }),
 };
 
 export const TOKEN_STORAGE_KEY = TOKEN_KEY;

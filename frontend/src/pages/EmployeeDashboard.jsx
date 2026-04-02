@@ -16,6 +16,10 @@ const EmployeeDashboard = () => {
 
   // Calculate metrics from session sales
   const metrics = useMemo(() => {
+    const revenueToday = sessionSales
+      .filter((sale) => isToday(sale.dateTime))
+      .reduce((sum, sale) => sum + (sale.totalAmount ?? sale.total ?? 0), 0);
+
     const soldToday = sessionSales
       .filter(sale => isToday(sale.dateTime))
       .reduce((sum, sale) => {
@@ -31,6 +35,7 @@ const EmployeeDashboard = () => {
     const lowStockCount = getLowStockProducts().length;
 
     return {
+      revenueToday,
       soldToday,
       soldWeek,
       lowStockCount
@@ -102,7 +107,13 @@ const EmployeeDashboard = () => {
   return (
     <DashboardLayout role="employee" pageTitle="Employee Dashboard">
       {/* Summary Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <KPICard
+          title="Today's Revenue"
+          value={metrics.revenueToday}
+          icon="💰"
+          prefix="₹"
+        />
         <KPICard
           title="Items Sold Today"
           value={metrics.soldToday}
