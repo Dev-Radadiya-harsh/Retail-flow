@@ -17,14 +17,17 @@ Host the **React app** on **Firebase** (free). Run the **API** on **your PC** (r
 ## Deployment order — **no Render** (Firebase + tunnel to your PC)
 
 1. In [Firebase Console](https://console.firebase.google.com/), note your site URLs, e.g. `https://YOUR-PROJECT.web.app` and `https://YOUR-PROJECT.firebaseapp.com`.
-2. On your Mac: install **[ngrok](https://ngrok.com/)** (or **Cloudflare Tunnel**). Start your API: `npm run backend:dev` from the repo root (listens on **3001**). Then tunnel **3001** and copy the **https** URL (example: `https://abcd-12-34-56.ngrok-free.app`).
-3. Create or edit **`frontend/.env.production`**:  
-   `VITE_API_BASE_URL=https://YOUR-TUNNEL-HOST/api`  
-   (replace `YOUR-TUNNEL-HOST` with the host only; keep **`/api`** at the end.)
-4. From repo root: **`npm run build`**, then **`firebase deploy --only hosting`**.
-5. On your Mac, in **`backend/.env`**, set **`FRONTEND_ORIGIN`** to your Firebase URLs, **comma-separated, no spaces**, for example:  
+2. On your Mac, in **`backend/.env`**, set **`FRONTEND_ORIGIN`** to those URLs, **comma-separated, no spaces**, for example:  
    `https://YOUR-PROJECT.web.app,https://YOUR-PROJECT.firebaseapp.com`  
-6. Restart **`npm run backend:dev`**. When you use the **hosted** site, keep **backend + tunnel** running. **Free ngrok URLs often change** when you restart — then you must update `.env.production`, rebuild, and redeploy (or use a paid fixed domain).
+   (CORS must allow your Firebase origin.)
+3. **Terminal 1 — API:** from the repo root, `npm run backend:dev` (port **3001**).
+4. **Terminal 2 — tunnel (built in):** from the repo root, `npm run tunnel:write`  
+   This uses **localtunnel** (installed with the repo) and **writes** `frontend/.env.production` with the correct `VITE_API_BASE_URL=…/api`. **Leave this terminal running.**  
+   Optional: `npm run tunnel` only prints the URL so you can paste it yourself.
+5. **New terminal — ship the frontend:** `npm run deploy:hosting` (runs `npm run build` then `firebase deploy --only hosting`). You need `firebase login` once.
+6. When you use the **Firebase URL**, your Mac must be **on**, with **`npm run backend:dev`** and **`npm run tunnel:write`** (or `npm run tunnel`) still running. If you restart the tunnel, **URLs change** — run **`npm run tunnel:write`** again, then **`npm run deploy:hosting`** again.
+
+**Note:** localtunnel is free and convenient; the first visit in a browser sometimes shows an interstitial “Click to continue”. For a more stable URL, use [ngrok](https://ngrok.com/) or [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) and set `VITE_API_BASE_URL` manually.
 
 **Cancel Render** in the [Render dashboard](https://dashboard.render.com/) (suspend/delete the Web Service) so you are not charged.
 
