@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
         return {
           success: false,
           error:
-            'The app could not read the server response. On Firebase Hosting set VITE_API_BASE_URL to your public HTTPS API (e.g. run npm run tunnel:write, then npm run build and firebase deploy). Do not use Render unless that URL is intentional.',
+            'The app could not read the server response. Rebuild the hosted app after `npm run tunnel:write` so VITE_API_BASE_URL points at your tunnel (https://…/api), or use http://localhost:5173 with `npm run dev`.',
         };
       }
 
@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
       return {
         success: false,
         error:
-          'Could not reach the API. Check that the backend is running on Render and that VITE_API_BASE_URL is set before building the frontend.',
+          'Could not reach the API. If you use the Firebase link: keep `npm run backend:dev` and `npm run tunnel:write` running on your Mac, rebuild with `npm run deploy:hosting`, and set FRONTEND_ORIGIN in backend/.env to your .web.app URL. If you use localhost: open http://localhost:5173 with `npm run dev`.',
       };
     }
   };
