@@ -1,10 +1,36 @@
-# Deploy RetailFlow: Firebase Hosting (frontend) + Render (backend)
+# Deploy RetailFlow: Firebase Hosting (frontend) + API (your choice)
 
-This guide walks through hosting the **React app** on **Firebase Hosting** and the **Express API** on **Render**, and wiring them together with environment variables.
+Host the **React app** on **Firebase** (free). Run the **API** on **your PC** (recommended if you want $0 hosting) using a **tunnel**, or use **Render** (optional paid/always-on server).
 
 ---
 
-## Deployment order (do this sequence)
+## Does Firebase + backend only on my PC work?
+
+| How you open the app | Works? |
+|----------------------|--------|
+| **`http://localhost:5173`** with `npm run dev` | **Yes.** API on your PC; no tunnel. |
+| **`https://…web.app`** (Firebase) + API only on `localhost` | **No** by itself: phones/browsers on the internet cannot reach `localhost` on your Mac. |
+| **`https://…web.app`** + **HTTPS tunnel** (ngrok / Cloudflare Tunnel) to your PC on port **3001** | **Yes**, while your PC is on and backend + tunnel are running. See **Deployment order — no Render** below. |
+
+---
+
+## Deployment order — **no Render** (Firebase + tunnel to your PC)
+
+1. In [Firebase Console](https://console.firebase.google.com/), note your site URLs, e.g. `https://YOUR-PROJECT.web.app` and `https://YOUR-PROJECT.firebaseapp.com`.
+2. On your Mac: install **[ngrok](https://ngrok.com/)** (or **Cloudflare Tunnel**). Start your API: `npm run backend:dev` from the repo root (listens on **3001**). Then tunnel **3001** and copy the **https** URL (example: `https://abcd-12-34-56.ngrok-free.app`).
+3. Create or edit **`frontend/.env.production`**:  
+   `VITE_API_BASE_URL=https://YOUR-TUNNEL-HOST/api`  
+   (replace `YOUR-TUNNEL-HOST` with the host only; keep **`/api`** at the end.)
+4. From repo root: **`npm run build`**, then **`firebase deploy --only hosting`**.
+5. On your Mac, in **`backend/.env`**, set **`FRONTEND_ORIGIN`** to your Firebase URLs, **comma-separated, no spaces**, for example:  
+   `https://YOUR-PROJECT.web.app,https://YOUR-PROJECT.firebaseapp.com`  
+6. Restart **`npm run backend:dev`**. When you use the **hosted** site, keep **backend + tunnel** running. **Free ngrok URLs often change** when you restart — then you must update `.env.production`, rebuild, and redeploy (or use a paid fixed domain).
+
+**Cancel Render** in the [Render dashboard](https://dashboard.render.com/) (suspend/delete the Web Service) so you are not charged.
+
+---
+
+## Deployment order — **with Render** (optional)
 
 1. **Create a Firebase project** in the [Firebase Console](https://console.firebase.google.com/) (you only need the **project ID** for now). Your site URL will be `https://YOUR-PROJECT-ID.web.app` and `https://YOUR-PROJECT-ID.firebaseapp.com` — you can set these in Render even before Hosting is live.
 2. **Deploy the backend on Render** (Part A) — get your API URL like `https://xxxx.onrender.com`.
@@ -17,9 +43,10 @@ This guide walks through hosting the **React app** on **Firebase Hosting** and t
 ## What you need
 
 - A [Firebase](https://console.firebase.google.com/) project (free Spark plan is enough for Hosting).
-- A [Render](https://render.com/) account (free tier available).
 - [Firebase CLI](https://firebase.google.com/docs/cli): `npm install -g firebase-tools`
 - Node.js installed locally (for builds).
+- **If you skip Render:** [ngrok](https://ngrok.com/) or **Cloudflare Tunnel** (free tier) so `https://…web.app` can reach your PC API.
+- **If you use Render:** a [Render](https://render.com/) account (optional).
 
 ---
 
@@ -37,7 +64,7 @@ This starts **both** the React app (Vite, usually `http://localhost:5173`) and t
 - **Frontend only:** `npm run dev:frontend`
 - **Backend only:** `npm run backend:dev`
 
-Firebase Hosting + Render are **unchanged**; `npm run build` still uses `frontend/.env.production` when you deploy the hosted site.
+`npm run build` uses **`frontend/.env.production`** (tunnel URL or Render URL) when you deploy the hosted site.
 
 ---
 
@@ -115,16 +142,23 @@ The backend reads `FRONTEND_ORIGIN` and only allows those origins. It must **exa
 
 ## Part B — Build the frontend with your API URL
 
-The frontend must know the Render API base URL **when you run `npm run build`**, because Vite bakes `VITE_*` variables into the static files.
+The frontend must know the API base URL **when you run `npm run build`**, because Vite bakes `VITE_*` variables into the static files.
 
 ### 1. Create `.env.production` inside the **`frontend/`** folder (next to `frontend/package.json`)
+
+**Option A — API on your PC (tunnel):**
+
+```env
+VITE_API_BASE_URL=https://YOUR-NGROK-OR-TUNNEL-HOST/api
+```
+
+**Option B — API on Render:**
 
 ```env
 VITE_API_BASE_URL=https://YOUR-SERVICE-NAME.onrender.com/api
 ```
 
-- Replace with your **real** Render URL.
-- Must end with `/api` (same as local dev: requests go to `/api/...` on the server).
+- Must end with **`/api`** (requests go to `/api/...` on the server).
 
 ### 2. Build
 
