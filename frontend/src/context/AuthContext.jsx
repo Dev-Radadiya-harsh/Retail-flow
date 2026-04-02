@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
         return {
           success: false,
           error:
-            'The app could not read the server response. On Firebase Hosting, create frontend/.env.production with VITE_API_BASE_URL=https://YOUR-RENDER.onrender.com/api, then run npm run build and deploy again.',
+            'The app could not read the server response. On Firebase Hosting set VITE_API_BASE_URL to your public HTTPS API (e.g. run npm run tunnel:write, then npm run build and firebase deploy). Do not use Render unless that URL is intentional.',
         };
       }
 

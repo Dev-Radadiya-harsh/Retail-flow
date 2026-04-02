@@ -1,22 +1,31 @@
 ================================================================================
-  FIREBASE + RENDER — MINIMUM STEPS (RetailFlow)
+  FIREBASE HOSTING + API ON YOUR PC (RetailFlow) — MINIMUM STEPS
 ================================================================================
 
-1) BACKEND (Render)
-   - Root Directory: backend
-   - Build: npm install   Start: node index.js
-   - Env: NODE_ENV=production, JWT_SECRET=(random), FRONTEND_ORIGIN=(your .web.app and .firebaseapp.com, comma, no spaces)
-   - Do NOT set PORT manually.
-   - Test: https://YOUR-SERVICE.onrender.com/api/health
+No Render required. The hosted site needs a public HTTPS URL → your laptop API (tunnel).
 
-2) FRONTEND (before firebase deploy)
-   From RetailFlow repo root:
-   - Copy:  frontend/env.production.template  →  frontend/.env.production
-   - Edit frontend/.env.production: set VITE_API_BASE_URL to your Render URL + /api
-   - Run:   npm install
-           npm run build
-   - Run:   firebase deploy --only hosting   (from repo root, where firebase.json is)
+1) BACKEND + TUNNEL (your Mac, two terminals)
+   Terminal A:  npm run backend:dev          (API on port 3001)
+   Terminal B:  npm run tunnel:write          (writes frontend/.env.production)
 
-3) If login still fails: FRONTEND_ORIGIN on Render must match the exact URL you open in the browser.
+2) backend/.env on your Mac must include:
+   FRONTEND_ORIGIN=https://YOUR-PROJECT.web.app,https://YOUR-PROJECT.firebaseapp.com
+
+3) DEPLOY STATIC SITE
+   From repo root:
+   npm install
+   npm run deploy:hosting
+   (or: npm run build && firebase deploy --only hosting)
+
+4) Whenever you open the .web.app site: keep Terminal A + B running.
+   If you restart the tunnel, run tunnel:write again, then deploy:hosting again.
+
+5) Local-only (no Firebase): npm run dev → http://localhost:5173
+
+================================================================================
+  Optional: API on Render again
+================================================================================
+  Fix frontend/.env.production to your https://….onrender.com/api and remove
+  the onrender check from frontend/vite.config.js if you fork it.
 
 ================================================================================
