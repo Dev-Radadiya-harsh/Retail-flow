@@ -1,0 +1,1770 @@
+================================================================================
+  RETAILFLOW — PROJECT DOCUMENTATION
+  (COMPLETE ACADEMIC DOCUMENTATION TEMPLATE)
+================================================================================
+
+
+VI. ABSTRACT
+============
+RetailFlow is a comprehensive, web-based retail management and Point of Sale (POS)
+application designed to streamline the day-to-day operations of small to medium-sized
+retail businesses. The system replaces manual, paper-based billing and inventory
+tracking with a fast, secure, and modern digital interface accessible from any web
+browser. It employs a full-stack JavaScript architecture: React.js (with Vite) for
+the Single Page Application (SPA) frontend, Node.js and Express for the REST API
+backend, and a lightweight, zero-configuration SQLite database for persistent data
+storage. Central to the system is a three-tier role-based access control model
+distinguishing Managers, Shop Owners, and Employees — each with their own tailored
+dashboard and access permissions. Key capabilities include secure JWT-based login,
+multi-shop administration, real-time product inventory tracking, an interactive
+cart-based Point of Sale checkout, auto-generated bill numbers, customer detail
+capture, and analytical dashboards powered by Chart.js. The system was designed to
+be deployable on low-cost cloud infrastructure (Firebase Hosting + Render) and
+requires no external database server, making it uniquely accessible to small business
+operators with limited IT resources.
+
+
+VII. ACKNOWLEDGEMENT
+====================
+I would like to express my sincere gratitude to my project guide and faculty members
+for their invaluable guidance, continuous support, and constructive feedback throughout
+the design and development of this project. My thanks also go to the open-source
+community for providing the powerful and freely available tools — React, Node.js,
+Express, SQLite, Tailwind CSS, and Chart.js — that made RetailFlow possible. Finally,
+I thank my team and institution for providing the infrastructure and environment needed
+to complete this work.
+
+
+VIII. TABLE OF CONTENTS
+========================
+  1.0  INTRODUCTION
+  2.0  PROJECT MANAGEMENT
+  3.0  SYSTEM REQUIREMENTS STUDY
+  4.0  SYSTEM ANALYSIS
+  5.0  SYSTEM DESIGN
+  6.0  IMPLEMENTATION PLANNING
+  7.0  TESTING
+  8.0  CONCLUSION AND DISCUSSION
+  9.0  LIMITATION AND FUTURE ENHANCEMENT
+  XIII. BIBLIOGRAPHY
+
+
+IX. LIST OF FIGURES
+===================
+  Figure 1  — Project Schedule Gantt Chart
+  Figure 2  — System Architecture Overview Diagram
+  Figure 3  — Activity Diagram: POS Checkout Flow
+  Figure 4  — Activity Diagram: Login and Role-Based Redirect Flow
+  Figure 5  — Use Case Diagram
+  Figure 6  — Class Diagram
+  Figure 7  — Sequence Diagram: Sale Creation Flow
+  Figure 8  — Sequence Diagram: Login Authentication Flow
+  Figure 9  — Entity Relationship (ER) Diagram
+  Figure 10 — Interface Screenshot: Login Page
+  Figure 11 — Interface Screenshot: Manager Dashboard
+  Figure 12 — Interface Screenshot: Owner Dashboard with Charts
+  Figure 13 — Interface Screenshot: Employee POS/Checkout Page
+  Figure 14 — Interface Screenshot: Settings and User Management Page
+  Figure 15 — Interface Screenshot: Sales History Page
+
+
+X. LIST OF TABLES
+=================
+  Table 1 — Hardware and Software Requirements
+  Table 2 — User Roles and Permissions
+  Table 3 — API Endpoints Summary
+  Table 4 — Data Dictionary
+  Table 5 — Module Specification
+  Table 6 — Test Cases
+
+
+================================================================================
+DETAIL OF CHAPTERS
+================================================================================
+
+
+CHAPTER 1: INTRODUCTION
+========================
+
+1.1 PROJECT SUMMARY
+--------------------
+RetailFlow is a secure, browser-based retail management platform that unifies Point
+of Sale (POS) billing, inventory control, employee administration, and sales analytics
+into one centralized system — eliminating the inefficiency of paper-ledger bookkeeping
+and disconnected cash registers faced by small retail businesses.
+
+The application serves three distinct user roles: a Manager who oversees the entire
+system and creates shops, an Owner who manages one assigned shop including its staff
+and products, and Employees who carry out daily transactions through the POS checkout
+interface. All roles access the system through the same secure login page, after which
+they are automatically redirected to their role-specific dashboard.
+
+The system is built with a React + Vite frontend and a Node.js + Express backend
+communicating through a RESTful API. Data is persisted in an SQLite database file,
+removing the need for a separate database server process. JWT tokens are used for
+stateless, secure session management.
+
+1.2 PURPOSE
+-----------
+The purpose of this project is to develop a practical, deployable, and cost-effective
+digital solution for Indian small-format retail shops (kirana stores, general stores,
+etc.) that struggle with:
+
+  - Inaccurate manual stock tracking that leads to out-of-stock or overstock situations.
+  - Slow, manual billing that reduces checkout throughput.
+  - Lack of sales analytics and reporting for informed business decisions.
+  - No centralized control mechanism for multi-staff retail operations.
+
+RetailFlow directly addresses these pain points by automating billing, tracking
+inventory in real time, and providing role-specific dashboards with visual analytics.
+
+1.3 OBJECTIVE
+-------------
+The specific objectives of the RetailFlow project are:
+
+  1. Develop a secure, multi-role authentication system distinguishing Managers,
+     Owners, and Employees.
+  2. Implement role-specific dashboards with appropriate data access and controls
+     for each role.
+  3. Build a dynamic Point of Sale (POS) interface enabling employees to quickly
+     build a cart, apply customer details, and complete a sale.
+  4. Automate inventory deduction upon sale completion using database transactions
+     to prevent race conditions.
+  5. Provide real-time graphical sales analytics (line charts and KPI cards)
+     for Owner dashboards.
+  6. Implement a persistent billing and sales history log with unique
+     auto-generated bill numbers.
+  7. Enable shop Owners to manage their employee roster (adding and removing
+     employee accounts).
+  8. Enable the Manager to provision new shops and assign shop owners.
+  9. Include a Settings module for users to update their own profile and credentials.
+
+1.4 SCOPE
+---------
+WHAT RETAILFLOW CAN DO:
+  - Multi-shop provisioning via the Manager role.
+  - Owner-level management: add/remove employee accounts, add/edit/delete products.
+  - Employee POS checkout: product search, quantity selection, cart management,
+    customer capture, and bill generation.
+  - Automatic stock deduction from inventory upon every completed sale.
+  - Low-stock alerts (products with quantity below 10 units).
+  - Auto-generated unique bill numbers (format: BILL-XXXXXXXX).
+  - Sales history retrieval; owners/managers see all sales, employees see their own.
+  - User profile and password self-service via the Settings page.
+  - JWT-based 24-hour session tokens, with automatic redirect to login on expiry.
+  - Deployable to Firebase Hosting (frontend) and Render (backend API).
+
+WHAT RETAILFLOW CANNOT DO (CURRENT VERSION):
+  - Integration with physical barcode scanners or receipt printers.
+  - Multi-currency support or regional tax (GST) calculation on invoices.
+  - Vendor/supplier purchase order management.
+  - Customer loyalty or rewards programs.
+  - Offline mode (requires active network connection to the backend API).
+  - Export sales data to Excel or PDF directly from the interface.
+
+1.5 TECHNOLOGY AND LITERATURE REVIEW
+--------------------------------------
+RetailFlow's technology stack is composed entirely of modern, open-source JavaScript
+ecosystem components.
+
+FRONTEND:
+  - React.js (v18): Component-based UI rendering with hooks. Allows declarative,
+    state-driven views.
+  - Vite: Ultra-fast development server and optimized production bundler. Proxies
+    /api/* requests to the backend during development.
+  - Tailwind CSS: Utility-first CSS framework for rapid, consistent styling.
+  - React Router (v6): Client-side routing for the SPA with protected route handling.
+  - Chart.js + react-chartjs-2: Canvas-based charting library for line charts
+    and doughnut charts in dashboards.
+  - Context API (React): Lightweight global state management for auth state,
+    app data, and toast notifications.
+
+BACKEND:
+  - Node.js: JavaScript runtime for server-side logic.
+  - Express.js: Minimalist HTTP framework for building structured RESTful API routes.
+  - JSON Web Tokens (JWT): Stateless token-based authentication; tokens embed
+    user ID, name, and role. Expire after 24 hours.
+  - bcryptjs: Industry-standard password hashing with salt rounds (cost factor 10)
+    to prevent rainbow table attacks.
+  - Helmet.js: Sets secure HTTP headers (Content-Security-Policy, X-Frame-Options).
+  - Morgan: HTTP request logger middleware for debugging.
+  - CORS: Configurable Cross-Origin Resource Sharing policy; locked to frontend origin.
+  - dotenv: Manages environment variables (PORT, JWT_SECRET, DATABASE_PATH,
+    FRONTEND_ORIGIN).
+
+DATABASE:
+  - SQLite (via better-sqlite3): Serverless relational database stored as a single
+    file (retailflow.db). Supports WAL (Write-Ahead Logging) mode and foreign key
+    constraints. No separate database server is required.
+  - UUID (v4): Universally Unique Identifiers used for all primary keys.
+
+LITERATURE REVIEW:
+  The design of RetailFlow draws inspiration from established Point of Sale principles
+  described in "Retail Management: A Strategic Approach" (Berman & Evans) and modern
+  RESTful API design guidelines from Roy Fielding's architectural constraints paper.
+  The role-based access control (RBAC) model is consistent with NIST SP 800-207
+  Zero Trust security principles, wherein each role gets minimum necessary privileges.
+
+
+CHAPTER 2: PROJECT MANAGEMENT
+==============================
+ 
+2.1 PROJECT PLANNING
+---------------------
+
+2.1.1 PROJECT DEVELOPMENT APPROACH AND JUSTIFICATION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+An Agile (iterative and incremental) development approach was chosen for RetailFlow.
+The system was built in clearly defined sprints:
+
+  Sprint 1 — Project setup, database schema definition, seed data, and authentication.
+  Sprint 2 — Products CRUD API and frontend product management for Owner role.
+  Sprint 3 — POS Cart component, sale submission, and stock deduction logic.
+  Sprint 4 — Sales history, bills history, and Owner dashboard analytics (charts).
+  Sprint 5 — Manager dashboard (shop and owner management), User Management page.
+  Sprint 6 — Settings page (profile and password update), UI polishing, deployment.
+
+Justification: Agile is appropriate because the UI requirements (dashboards, cart
+interactions) were not fully clear upfront. Iterative delivery allowed stakeholder
+review at each stage and early identification of integration issues between the
+React frontend and Express API.
+
+2.1.2 PROJECT EFFORT AND TIME, COST ESTIMATION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Estimated Development Duration: 10 to 12 weeks (for a 2-person team or solo developer).
+
+PHASE BREAKDOWN:
+  Requirements and DB Design  — 1 week
+  Backend API Development     — 3 weeks
+  Frontend Development        — 3 weeks
+  Integration and Testing     — 2 weeks
+  Deployment and Documentation — 2 weeks
+
+COST ESTIMATION:
+  Development Tools               — Rs. 0  (all open-source)
+  Frontend Hosting (Firebase)     — Rs. 0  (free tier)
+  Backend Hosting (Render)        — Rs. 0  (free tier)
+  Domain (optional)               — Approx. Rs. 800/year
+  Total Estimated Project Cost    — Rs. 0 to Rs. 800
+
+2.1.3 ROLES AND RESPONSIBILITIES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Project Lead / Architect:
+    System design, database schema, API structure, and deployment planning.
+
+  Backend Developer:
+    Express routes, JWT middleware, SQLite queries, and bcrypt integration.
+
+  Frontend Developer:
+    React components, React Router, Context API, and Chart.js dashboards.
+
+  QA / Tester:
+    Test case design and manual user flow testing for all 3 user roles.
+
+2.1.4 GROUP DEPENDENCIES
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+  - Frontend development depends on finalized backend API endpoint contracts
+    (URI, request and response shapes).
+  - POS Cart testing depends on a seeded SQLite database with test products.
+  - Owner Dashboard charts depend on the completed Sales API returning
+    date-sorted records.
+  - Deployment of the frontend depends on the backend being deployed first,
+    to obtain the live API base URL for the VITE_API_BASE_URL environment variable.
+
+2.2 PROJECT SCHEDULING
+-----------------------
+///////////////////// FIGURE 1: Project Schedule Gantt Chart /////////////////////
+(Gantt chart spanning 12 weeks with the following phases: Requirement Analysis,
+Database Design, Backend API Development, Frontend Development, Integration Testing,
+and Deployment.)
+
+
+CHAPTER 3: SYSTEM REQUIREMENTS STUDY
+=====================================
+
+3.1 USER CHARACTERISTICS
+--------------------------
+The system serves three distinct user types:
+
+  MANAGER:
+    Characteristics : Technically aware administrator; oversees all shops and owners.
+    System Access   : Manager Dashboard — create shops and assign shop owners.
+
+  OWNER:
+    Characteristics : Business owner; may have basic computer skills.
+    System Access   : Owner Dashboard — products, staff, analytics, and sales.
+
+  EMPLOYEE:
+    Characteristics : Shop-floor cashier; needs a very fast and simple POS interface.
+    System Access   : Employee Dashboard — POS checkout and view own bills.
+
+3.2 HARDWARE AND SOFTWARE REQUIREMENTS
+----------------------------------------
+MINIMUM HARDWARE — SERVER / DEVELOPMENT MACHINE:
+  Processor : Dual-Core 1.8 GHz or higher
+  RAM       : 4 GB minimum
+  Storage   : 500 MB free disk space (for Node modules and DB file)
+  Network   : Stable Internet or Local Network connection
+
+MINIMUM HARDWARE — CLIENT / USER DEVICES:
+  Device    : PC, Laptop, or Tablet with a modern web browser
+  Browser   : Chrome 90+, Firefox 88+, or Safari 14+
+  Network   : Stable connection to the API server endpoint
+
+SOFTWARE REQUIREMENTS:
+  Node.js          : v18 LTS or higher
+  npm              : v9+ (bundled with Node.js)
+  SQLite           : Managed via better-sqlite3 (no separate installation needed)
+  Operating System : macOS, Linux, or Windows (for development/server)
+  Web Browser      : Chrome, Firefox, or Safari (for client access)
+
+3.3 ASSUMPTIONS AND DEPENDENCIES
+----------------------------------
+ASSUMPTIONS:
+  - Client devices have a stable internet or LAN connection to reach the backend API.
+  - The SQLite database file persists on a mounted disk volume in the production
+    deployment environment.
+  - Users have basic literacy in operating a web browser and touch/click interface.
+
+DEPENDENCIES:
+  Backend npm packages:
+    express, better-sqlite3, bcryptjs, jsonwebtoken, helmet, morgan,
+    cors, dotenv, uuid
+
+  Frontend npm packages:
+    react, react-dom, react-router-dom, react-chartjs-2, chart.js,
+    tailwindcss, vite
+
+  The backend must be running on port 3001 (or the configured PORT) for
+  the frontend to function correctly.
+
+
+CHAPTER 4: SYSTEM ANALYSIS
+===========================
+
+4.1 STUDY OF CURRENT SYSTEM
+-----------------------------
+Traditional small-format retail shops in India typically rely on:
+
+  - Manual paper ledgers for daily sales recording.
+  - Standalone cash registers with no digital record trail.
+  - Oral or manual stock management with periodic physical counts.
+  - No mechanism for remote monitoring of store performance by the owner.
+  - No historical sales analysis, making it impossible to identify top-selling
+    products or slow business days.
+
+4.2 PROBLEM AND WEAKNESSES OF CURRENT SYSTEM
+----------------------------------------------
+  1. Calculation Errors: Manual arithmetic during billing leads to over-charging
+     or under-charging customers.
+  2. Inventory Blind Spots: Inability to track real-time stock levels causes
+     out-of-stock scenarios and lost sales.
+  3. No Audit Trail: Lost paper receipts mean no record of transactions, enabling
+     theft or billing disputes.
+  4. No Analytics: Owners cannot make data-driven decisions such as which products
+     to reorder or discount.
+  5. Slow Checkout: Manual billing slows the checkout queue, reducing customer
+     satisfaction.
+  6. No Multi-Staff Visibility: Owners cannot monitor employee sales performance
+     or daily activity.
+
+4.3 REQUIREMENTS OF NEW SYSTEM
+--------------------------------
+
+4.3.1 FUNCTIONAL REQUIREMENTS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  FR-01 : The system shall authenticate users with email and password.
+  FR-02 : The system shall issue and validate JWT tokens with a 24-hour expiry.
+  FR-03 : The system shall redirect authenticated users to their role-specific dashboard.
+  FR-04 : The Manager role shall be able to create new shops and assign owners.
+  FR-05 : The Owner role shall be able to add, edit, and delete products in their shop.
+  FR-06 : The Owner role shall be able to create and remove employee accounts.
+  FR-07 : The Employee role shall be able to search and select products to add to cart.
+  FR-08 : The system shall capture customer details (name and phone) at time of sale.
+  FR-09 : The system shall deduct product stock quantities upon a successful sale.
+  FR-10 : The system shall generate a unique bill number (BILL-XXXXXXXX) for each sale.
+  FR-11 : The system shall display past sales filtered by role (all sales for Owner
+          and Manager; own sales only for Employee).
+  FR-12 : The system shall alert users when any product's stock drops below 10 units.
+  FR-13 : Users shall be able to update their own name, email, phone, and password
+          via the Settings page.
+
+4.3.2 NON FUNCTIONAL REQUIREMENTS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  NFR-01 : Security — Passwords shall be stored using bcrypt (cost factor 10);
+           plaintext passwords are never stored in the database.
+  NFR-02 : Performance — API responses for product listing and sale submission
+           shall complete in under 300ms on a local network.
+  NFR-03 : Availability — The system shall depend only on services that can be
+           hosted for free (Firebase and Render free tiers).
+  NFR-04 : Scalability — The REST API architecture supports future migration from
+           SQLite to PostgreSQL without frontend changes.
+  NFR-05 : Usability — The Employee POS interface shall allow completing a checkout
+           in under 5 interactions.
+  NFR-06 : Maintainability — Backend routes are organized into separate files per
+           domain (auth, products, sales, users, shops).
+
+4.4 FEASIBILITY STUDY
+-----------------------
+
+4.4.1 DOES THE SYSTEM CONTRIBUTE TO THE OVERALL OBJECTIVES OF THE ORGANIZATION?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Yes. RetailFlow directly addresses the core business need of small retail shops to
+digitize billing, track inventory in real time, and gain visibility into sales
+performance — all at near-zero infrastructure cost.
+
+4.4.2 CAN THE SYSTEM BE IMPLEMENTED USING THE CURRENT TECHNOLOGY AND WITHIN
+      THE GIVEN COST AND SCHEDULE CONSTRAINTS?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Yes. The system is fully implemented using free, open-source technologies. The project
+was completed within the estimated 10 to 12 week schedule by a small team. Hosting on
+Firebase (frontend) and Render (API) keeps ongoing costs at zero to minimal.
+
+4.4.3 CAN THE SYSTEM BE INTEGRATED WITH OTHER SYSTEMS WHICH ARE ALREADY IN PLACE?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Yes. The RESTful API backend (with standard HTTP JSON endpoints) makes RetailFlow
+inherently integrable. Future integrations can include:
+
+  - Accounting software such as Tally via API bridges.
+  - SMS gateways such as Twilio for customer bill notifications.
+  - Barcode scanner hardware via browser-based HID APIs.
+
+4.5 ACTIVITY/PROCESS IN NEW SYSTEM
+-------------------------------------
+///////////////////// FIGURE 3: Activity Diagram — POS Checkout Flow /////////////////////
+Steps:
+  Employee logs in → Routed to /employee dashboard → Searches for product →
+  Adds product to cart → Enters customer name and phone → Clicks "Complete Sale" →
+  System validates stock availability → Deducts stock from database →
+  Generates unique BILL number → Records sale in database →
+  Shows success notification → Cart is cleared
+
+///////////////////// FIGURE 4: Activity Diagram — Login and Role-Based Redirect Flow /////////////////////
+Steps:
+  User enters email and password → POST request to /api/auth/email-login →
+  Server finds user by email → bcrypt compares password to stored hash →
+  JWT issued with user ID, name, and role → Frontend stores token in localStorage →
+  Role is read from JWT → User routed to /manager, /owner, or /employee
+
+4.6 FEATURES OF NEW SYSTEM
+----------------------------
+  1.  Secure email and password login with JWT session tokens.
+  2.  Automatic role-based dashboard routing (Manager, Owner, Employee).
+  3.  Manager Dashboard: Create shops, assign owners, view all registered users.
+  4.  Owner Dashboard: KPI cards (total sales, revenue), sales trend line chart,
+      product category doughnut chart, low-stock alerts.
+  5.  Employee Dashboard: Real-time product search, cart-based POS, customer
+      detail entry, and bill generation.
+  6.  Sales History: Paginated list of past transactions with bill numbers and totals.
+  7.  Bills History: Employee-scoped view of their own generated bills.
+  8.  User Management: Owner-only page to add and remove employees.
+  9.  Settings: Self-service profile update (name, email, phone, and password).
+  10. Toast Notification System: Non-blocking success and error alerts across all pages.
+
+4.7 USE CASE DIAGRAM
+---------------------
+///////////////////// FIGURE 5: Use Case Diagram /////////////////////
+Actors:
+  Manager, Owner, Employee, System (for JWT token validation)
+
+Use Cases:
+  Login, Logout, Create Shop, Assign Owner, Manage Products (CRUD),
+  Manage Employees (Create and Delete), Process POS Sale, View Sales History,
+  View Bills History, View Dashboard Analytics, Update Profile and Password.
+
+4.8 CLASS DIAGRAM
+------------------
+///////////////////// FIGURE 6: Class Diagram /////////////////////
+Classes and key attributes with methods:
+
+  User:
+    Attributes : id, name, email, phone, role, passwordHash, shopId
+    Methods    : login(), updateProfile(), changePassword()
+
+  Shop:
+    Attributes : id, name, createdAt
+    Methods    : create(), listUsers(), listProducts()
+
+  Product:
+    Attributes : id, name, price, quantity, category, shopId, createdAt, updatedAt
+    Methods    : add(), edit(), delete(), deductStock(qty)
+
+  Sale:
+    Attributes : id, billNumber, dateTime, items (JSON), totalAmount,
+                 customerName, customerPhone, createdBy, shopId
+    Methods    : create(), fetchAll(), fetchByUser()
+
+  Cart (frontend only):
+    Attributes : items[], total
+    Methods    : addItem(), removeItem(), updateQty(), clear(), submitSale()
+
+Relationships:
+  - Shop has many Users (owners and employees)
+  - Shop has many Products
+  - Shop has many Sales
+  - User (employee) creates many Sales
+  - Sale contains many Line Items (embedded JSON)
+
+4.9 SEQUENCE DIAGRAM
+---------------------
+///////////////////// FIGURE 7: Sequence Diagram — Sale Creation Flow /////////////////////
+Participants:
+  Employee Browser, React Cart Component, Express /api/sales,
+  DB Transaction, Products Table, Sales Table
+
+Flow:
+  1. Employee clicks "Complete Sale"
+  2. Cart sends POST /api/sales with items list, customerName, customerPhone
+  3. authMiddleware validates the JWT token
+  4. For each item: SELECT from products, check stock, accumulate total
+  5. DB Transaction: UPDATE products SET quantity = quantity - item qty (all items)
+  6. INSERT INTO sales (bill number, items JSON, total, customer, createdBy)
+  7. Return new sale record with status 201 Created
+  8. React shows success toast notification and clears the cart
+
+///////////////////// FIGURE 8: Sequence Diagram — Login Authentication Flow /////////////////////
+Participants:
+  Login Page, Express /api/auth/email-login, Users Table, JWT Library
+
+Flow:
+  1. User submits email and password
+  2. POST request to /api/auth/email-login
+  3. SELECT user WHERE email matches
+  4. bcrypt.compare(inputPassword, storedHash)
+  5. If match: jwt.sign({ id, name, role }, JWT_SECRET, expiresIn: 24h)
+  6. Return token and user object { id, name, role, email }
+  7. Frontend stores token in localStorage
+  8. Navigate to role-specific route
+
+4.10 DATA MODELING
+-------------------
+
+4.10.1 DATA DICTIONARY
+~~~~~~~~~~~~~~~~~~~~~~~~
+TABLE: shops
+  id        — TEXT, PRIMARY KEY — UUID v4 unique identifier
+  name      — TEXT, NOT NULL, UNIQUE — Shop display name
+  createdAt — TEXT, DEFAULT now() — ISO 8601 timestamp of creation
+
+TABLE: users
+  id       — TEXT, PRIMARY KEY — UUID v4 unique identifier
+  name     — TEXT, NOT NULL, UNIQUE — Login username (also display name)
+  password — TEXT, NOT NULL — bcrypt hash, never stored in plaintext
+  role     — TEXT, CHECK IN (manager, owner, employee) — User role
+  email    — TEXT, DEFAULT NULL — Email address used for login
+  phone    — TEXT, DEFAULT NULL — Contact phone number
+  shop_id  — TEXT, FK to shops(id) ON DELETE SET NULL — Assigned shop
+             (NULL for manager role)
+
+TABLE: products
+  id        — TEXT, PRIMARY KEY — UUID v4 unique identifier
+  name      — TEXT, NOT NULL — Product display name
+  price     — REAL, NOT NULL, CHECK >= 0 — Unit selling price in INR
+  quantity  — INTEGER, NOT NULL, CHECK >= 0 — Current stock count
+  category  — TEXT, DEFAULT empty — Product category (Grains, Oils, etc.)
+  shop_id   — TEXT, FK to shops(id) ON DELETE CASCADE — Owning shop
+  createdAt — TEXT, NOT NULL — ISO 8601 timestamp of creation
+  updatedAt — TEXT, NOT NULL — ISO 8601 timestamp of last modification
+
+TABLE: sales
+  id            — TEXT, PRIMARY KEY — UUID v4 unique identifier
+  billNumber    — TEXT — Auto-generated BILL-XXXXXXXX (last 8 digits of timestamp)
+  dateTime      — TEXT, NOT NULL — ISO 8601 timestamp of sale
+  items         — TEXT, NOT NULL — JSON array of line items (name, qty, price, total)
+  totalAmount   — REAL, NOT NULL — Grand total of the sale
+  customerName  — TEXT, DEFAULT empty — Optional customer name
+  customerPhone — TEXT, DEFAULT empty — Optional customer phone number
+  createdBy     — TEXT, FK to users(id) — Employee who processed the sale
+  sessionId     — TEXT — Optional session tracking identifier
+  shop_id       — TEXT, FK to shops(id) ON DELETE CASCADE — Owning shop
+
+4.10.2 ER DIAGRAM
+~~~~~~~~~~~~~~~~~~
+///////////////////// FIGURE 9: Entity Relationship (ER) Diagram /////////////////////
+Entities  : Shop, User, Product, Sale
+
+Relationships:
+  - Shop (1) has (N) Users — owners and employees belong to one shop
+  - Shop (1) has (N) Products — products are scoped to a shop
+  - Shop (1) has (N) Sales — each sale is linked to a shop
+  - User/Employee (1) creates (N) Sales — each sale is attributed to one employee
+  - Sale (1) contains (N) Line Items — stored as an embedded JSON array
+
+Note: Manager-role users have shop_id = NULL. They manage all shops globally.
+
+4.11 LIST MAIN MODULES OF NEW SYSTEM
+--------------------------------------
+  MOD-01 — Authentication Module:
+    Email and password login, JWT issuance, 24-hour session, and logout.
+
+  MOD-02 — Manager Admin Module:
+    Create shops and assign owner accounts via the Manager Dashboard.
+
+  MOD-03 — Product Management Module:
+    Owner-only CRUD operations for products; includes low-stock alerts.
+
+  MOD-04 — Employee Management Module:
+    Owner creates and deletes employee accounts scoped to their shop.
+
+  MOD-05 — POS Checkout Module:
+    Cart-based billing with product search, quantity control, and sale submission.
+
+  MOD-06 — Sales and Billing Module:
+    Sale recording, unique bill number generation, and transaction history.
+
+  MOD-07 — Analytics Dashboard Module:
+    Chart.js KPI cards, sales trend chart, and category distribution charts.
+
+  MOD-08 — Settings Module:
+    Self-service profile update (name, email, phone) and password change.
+
+  MOD-09 — Route Protection Module:
+    ProtectedRoute component that guards all non-login routes via JWT check.
+
+4.12 SELECTION OF HARDWARE AND SOFTWARE AND JUSTIFICATION
+----------------------------------------------------------
+  React.js + Vite:
+    React provides a component model ideal for complex, interactive UI like the
+    POS cart. Vite is chosen over Create React App for its faster hot module
+    replacement and build speed.
+
+  Node.js + Express:
+    Allows using a single language (JavaScript) across both frontend and backend,
+    reducing context switching and enabling code sharing.
+
+  SQLite (better-sqlite3):
+    Zero-configuration, file-based relational database. Chosen because no separate
+    database server is needed, making it ideal for cost-constrained deployments.
+
+  JWT (JSON Web Tokens):
+    Stateless authentication that avoids server-side session storage, simplifying
+    future horizontal scaling.
+
+  Tailwind CSS:
+    Utility-first classes allow rapid, consistent UI development without writing
+    custom CSS files.
+
+
+CHAPTER 5: SYSTEM DESIGN
+=========================
+
+5.1 SYSTEM APPLICATION DESIGN
+-------------------------------
+
+5.1.1 METHOD PSEUDO CODE
+~~~~~~~~~~~~~~~~~~~~~~~~~
+-- AUTHENTICATION (backend/routes/auth.js) --
+
+FUNCTION emailLogin(email, password):
+    user = DB.query("SELECT * FROM users WHERE LOWER(email) = ?", email)
+    IF user is NULL THEN
+        RETURN 401 "No account found for this email"
+    isMatch = bcrypt.compare(password, user.password)
+    IF NOT isMatch THEN
+        RETURN 401 "Incorrect password"
+    token = jwt.sign({ id, name, role }, JWT_SECRET, expiresIn: "24h")
+    RETURN 200 { token, user }
+
+
+-- POS SALE SUBMISSION (backend/routes/sales.js) --
+
+FUNCTION createSale(items, customerName, customerPhone, userId):
+    totalAmount = 0
+    BEGIN TRANSACTION
+        FOR EACH item IN items:
+            product = DB.query("SELECT * FROM products WHERE id = ?", item.productId)
+            IF product is NULL THEN THROW "Product not found"
+            IF item.quantity > product.quantity THEN THROW "Insufficient stock"
+            totalAmount += product.price * item.quantity
+            DB.execute("UPDATE products SET quantity = quantity - ? WHERE id = ?",
+                        item.quantity, product.id)
+
+        billNumber = "BILL-" + LAST_8_DIGITS(Date.now())
+        saleId = uuid()
+        DB.execute("INSERT INTO sales (...) VALUES (...)",
+                    saleId, billNumber, items_JSON, totalAmount, ...)
+    COMMIT TRANSACTION
+    RETURN 201 newSaleRecord
+
+
+-- PRODUCT STOCK CHECK (backend/routes/products.js) --
+
+FUNCTION getLowStockProducts():
+    RETURN DB.query("SELECT * FROM products WHERE quantity < 10 ORDER BY quantity ASC")
+
+
+5.2 DATABASE DESIGN/DATA STRUCTURE DESIGN
+------------------------------------------
+
+5.2.1 MAPPING OF ER DIAGRAMS INTO TABLES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+All ER entities map directly to SQLite relational tables with UUID primary keys
+and foreign key constraints enforced via PRAGMA foreign_keys = ON. Shop is the
+central anchor entity. Users reference shops via shop_id. Products reference
+shops via shop_id with CASCADE DELETE, meaning that deleting a shop automatically
+removes its products. Sales reference both shops (CASCADE) and users (SET NULL on
+user delete), preserving historical sale records even if an employee is removed.
+
+5.2.2 NORMALIZATION
+~~~~~~~~~~~~~~~~~~~~
+The shops, users, and products tables conform to Third Normal Form (3NF):
+  - Each table has a single primary key (UUID).
+  - No partial dependencies exist (all PKs are single-column).
+  - No transitive dependencies exist (shop details are in the shops table,
+    not repeated in users or products).
+
+The sales table uses a controlled denormalization: line items are stored as a JSON
+array within the items TEXT column. This is a deliberate architectural decision to
+preserve an immutable receipt snapshot — if a product is later renamed or deleted,
+its original sale record remains historically accurate.
+
+5.3 INPUT/OUTPUT AND INTERFACE DESIGN
+---------------------------------------
+
+5.3.1 SAMPLES OF FORMS, REPORTS AND INTERFACE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///////////////////// FIGURE 10: Interface Screenshot — Login Page /////////////////////
+  Email input field, Password input field, Sign In button. Clean centered card layout.
+
+///////////////////// FIGURE 11: Interface Screenshot — Manager Dashboard /////////////////////
+  Shop list, Create Shop button, and Owner assignment form.
+  Shows a list of all registered Shops and their assigned Owners.
+
+///////////////////// FIGURE 12: Interface Screenshot — Owner Dashboard with Charts /////////////////////
+  KPI Cards showing: Total Sales Count, Total Revenue, Active Products, Low Stock Count.
+  Line Chart: Daily sales trend over the past 30 days.
+  Doughnut Chart: Sales distribution by product category.
+  Low Stock alert section listing products below 10 units.
+
+///////////////////// FIGURE 13: Interface Screenshot — Employee POS/Checkout Page /////////////////////
+  Left panel: Product search bar and a searchable product grid with Add to Cart buttons.
+  Right panel: Cart items list with quantity controls, customer name and phone fields,
+  total amount display, and a Complete Sale button.
+
+///////////////////// FIGURE 14: Interface Screenshot — Settings Page /////////////////////
+  Profile update form: Name, Email, Phone number.
+  Password change form: Current password, New password, Confirm new password.
+
+///////////////////// FIGURE 15: Interface Screenshot — Sales History Page /////////////////////
+  Sortable table showing Bill Number, Date and Time, Customer Name, Items Count,
+  and Total Amount. Each row is expandable to view individual line item details.
+
+5.3.2 ACCESS CONTROL AND SECURITY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  - All API routes (except /api/auth) are protected by the authMiddleware function
+    which validates the Bearer JWT token in the Authorization header.
+  - Product create, edit, and delete routes are additionally guarded by the
+    ownerOnly middleware which checks the decoded user role from the token.
+  - The frontend uses a ProtectedRoute React component that reads the auth token
+    from localStorage; if missing or expired, it redirects to the login page.
+  - CORS is locked to the configured FRONTEND_ORIGIN (default: localhost:5173);
+    requests from unlisted origins are rejected.
+  - Helmet.js sets HTTP security headers on every API response.
+  - Passwords are never returned in any API response; SELECT queries explicitly
+    exclude the password column from all user-facing endpoints.
+
+
+CHAPTER 6: IMPLEMENTATION PLANNING
+===================================
+
+6.1 IMPLEMENTATION ENVIRONMENT
+--------------------------------
+Architecture: 3-Tier Client-Server Web Application
+
+  Tier 1 — Presentation Layer:
+    React SPA served via Vite dev server (development) or Firebase Hosting (production).
+
+  Tier 2 — Logic / API Layer:
+    Node.js and Express REST API on port 3001, hosted on Render (production).
+
+  Tier 3 — Data Layer:
+    SQLite database file (retailflow.db), persisted on Render's mounted disk.
+
+ENVIRONMENT TYPES:
+  Development:
+    Command: npm run dev:all
+    Vite runs on port 5173, Express runs on port 3001.
+    Vite automatically proxies all /api/* requests to port 3001.
+
+  Production:
+    Vite builds static files to frontend/dist and they are uploaded to Firebase.
+    Express runs on Render with FRONTEND_ORIGIN set to the Firebase hosting URL.
+
+Multi-User Support: Yes — the system is multiuser by design. Multiple users can
+have concurrent active sessions, each managed with their own individual JWT.
+
+6.2 PROGRAM/MODULES SPECIFICATION
+-----------------------------------
+FRONTEND FILES:
+  frontend/src/main.jsx
+    React app entry point. Mounts the App component to the root div.
+
+  frontend/src/App.jsx
+    Router setup, protected route wrapper, and role-to-route mapping.
+
+  frontend/src/context/AuthContext.jsx
+    Global authentication state: user object, token, login, and logout functions.
+
+  frontend/src/context/AppContext.jsx
+    Shared application data: products list, sales list, and shops list.
+
+  frontend/src/context/ToastContext.jsx
+    Global toast notification queue and display system.
+
+  frontend/src/components/ProtectedRoute.jsx
+    Verifies JWT on protected page routes; redirects to login if unauthenticated.
+
+  frontend/src/components/BillingCart.jsx
+    Full POS cart component: item management, customer form, and checkout flow.
+
+  frontend/src/components/Sidebar.jsx
+    Role-aware navigation sidebar shown on all dashboard pages.
+
+  frontend/src/pages/Login.jsx
+    Login form connected to the /api/auth/email-login endpoint.
+
+  frontend/src/pages/OwnerDashboard.jsx
+    KPI cards, Chart.js charts, and low-stock alert panel for the Owner role.
+
+  frontend/src/pages/EmployeeDashboard.jsx
+    Product search integrated with the BillingCart for the Employee role.
+
+  frontend/src/pages/ManagerDashboard.jsx
+    Shop and owner administration interface for the Manager role.
+
+  frontend/src/pages/SalesHistory.jsx
+    Paginated sales records table viewable by Owner and Manager.
+
+  frontend/src/pages/BillsHistory.jsx
+    Employee-scoped view of their own generated bills.
+
+  frontend/src/pages/UserManagement.jsx
+    Owner view to add and remove employee accounts for their shop.
+
+  frontend/src/pages/Settings.jsx
+    Self-service profile and password update page.
+
+  frontend/src/services/api.js
+    Centralized fetch wrapper that attaches the Authorization header to all requests.
+
+BACKEND FILES:
+  backend/index.js
+    Express app bootstrap: middleware setup, route mounting, and server start.
+
+  backend/routes/auth.js
+    Handles POST /api/auth/email-login and POST /api/auth/login endpoints.
+
+  backend/routes/products.js
+    CRUD endpoints: GET, POST, PUT, DELETE for /api/products.
+
+  backend/routes/sales.js
+    POST to create a sale and GET to list sales at /api/sales.
+
+  backend/routes/users.js
+    GET, POST, DELETE for /api/users and GET /api/users/me for current user profile.
+
+  backend/routes/shops.js
+    CRUD operations for shops at /api/shops.
+
+  backend/middleware/auth.js
+    JWT verification middleware (authMiddleware function).
+
+  backend/middleware/roleGuard.js
+    Role-based access guard (ownerOnly and managerOnly middleware).
+
+  backend/db/database.js
+    SQLite connection, table creation SQL, and schema migration helpers.
+
+  backend/db/seed.js
+    Seeds an initial shop, 3 users, and 15 sample products on an empty database.
+
+6.3 SECURITY FEATURES
+-----------------------
+  1. bcrypt Password Hashing:
+     All passwords are hashed with bcrypt (saltRounds = 10) before storage.
+     Plaintext passwords never persist in the database.
+
+  2. JWT Authentication:
+     All non-public API endpoints require a valid, non-expired JSON Web Token
+     passed in the Authorization: Bearer header.
+
+  3. Role Enforcement:
+     Server-side middleware (ownerOnly, managerOnly) checks the user role extracted
+     from the JWT before processing any sensitive operations.
+
+  4. HTTP Security Headers:
+     Helmet.js automatically sets headers including X-Content-Type-Options,
+     X-Frame-Options, and Content-Security-Policy on every response.
+
+  5. CORS Whitelisting:
+     Only requests from the configured FRONTEND_ORIGIN are accepted. Cross-origin
+     requests from unlisted domains are automatically rejected.
+
+  6. Environment Variable Secrets:
+     JWT_SECRET and DATABASE_PATH are stored in environment variables, never
+     hardcoded. The .env file is listed in .gitignore and never committed to Git.
+
+  7. Input Validation:
+     All POST and PUT API routes validate required fields, data types, and value
+     ranges before writing anything to the database.
+
+6.4 CODING STANDARDS
+----------------------
+  Language:
+    JavaScript (ES2022) throughout — both frontend (JSX) and backend (CommonJS).
+
+  Linter:
+    ESLint configured at the repo root (eslint.config.js) covering both frontend
+    and backend source files.
+
+  Naming Conventions:
+    camelCase for functions and variables.
+    PascalCase for React components and class names.
+
+  File Organization:
+    Backend routes are split by domain (auth, products, sales, users, shops).
+    Frontend follows a pages / components / context / services / utils structure.
+
+  Error Handling:
+    All Express route handlers are wrapped in try-catch blocks. A global error
+    handler in index.js catches any unhandled errors.
+
+  Database Access:
+    All SQL queries use parameterized prepared statements via better-sqlite3's
+    prepare().run() / get() / all() methods to prevent SQL injection attacks.
+
+  Code Comments:
+    Key architectural decisions and non-obvious logic are annotated with
+    inline comments throughout the codebase.
+
+
+CHAPTER 7: TESTING
+===================
+
+7.1 TESTING PLAN
+-----------------
+Testing was performed in the local development environment using both manual
+exploratory testing (simulating each user role) and structured test cases.
+Emphasis was placed on:
+
+  - All three role login flows (Manager, Owner, Employee).
+  - Product management operations (add, edit, delete) with input boundary checks.
+  - POS cart: adding items, modifying quantities, submitting a sale, and verifying
+    stock deduction.
+  - Security: attempting to access protected routes without a token or with an
+    incorrect role token.
+  - Edge cases: insufficient stock, empty cart submission, and invalid credentials.
+
+7.2 TESTING STRATEGY
+---------------------
+Strategy: Bottom-Up Integration Testing.
+
+  Phase 1 — Unit-Level API Testing:
+    Each backend API endpoint was tested individually using a REST client (Postman
+    or curl) with both valid and invalid inputs.
+
+  Phase 2 — Integration Testing:
+    React frontend was connected to the live backend. User flows were tested
+    end-to-end for all three roles.
+
+  Phase 3 — User Acceptance Testing (UAT):
+    Simulated real-world usage scenarios, for example an employee completing a
+    5-item sale and an owner checking dashboard charts after sales are recorded.
+
+7.3 TEST SUITES DESIGN
+
+7.3.1.1 TEST CASES
+~~~~~~~~~~~~~~~~~~~
+TC-01
+  Condition       : Login with valid Owner email and password.
+  Expected Output : Redirected to /owner dashboard; JWT stored in localStorage.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-02
+  Condition       : Login with an unregistered email address.
+  Expected Output : Error message "No account found for this email." Login rejected.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-03
+  Condition       : Login with correct email but wrong password.
+  Expected Output : Error message "Incorrect password." Login rejected.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-04
+  Condition       : Access the /owner route without a JWT token.
+  Expected Output : Redirected to the /login page.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-05
+  Condition       : Employee attempts to access /owner route with Employee JWT.
+  Expected Output : Redirected to /employee (role mismatch).
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-06
+  Condition       : Owner adds a product with all valid fields.
+  Expected Output : Product appears in product list; stock and price match input.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-07
+  Condition       : Owner adds a product with a negative price (-50).
+  Expected Output : Error "Price must be a non-negative number." Product not created.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-08
+  Condition       : Employee adds 2 items to cart and completes the sale.
+  Expected Output : Sale created; unique BILL number shown; stock reduced for both items.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-09
+  Condition       : Employee tries to checkout more units than available stock.
+  Expected Output : Error "Insufficient stock for [product]. Only X available."
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-10
+  Condition       : Employee submits a sale with an empty cart.
+  Expected Output : Error "Sale must include at least one item." No sale recorded.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-11
+  Condition       : Owner views Sales History after an employee completes a sale.
+  Expected Output : New sale appears at the top of the list with correct total and BILL number.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-12
+  Condition       : Owner creates a new employee account.
+  Expected Output : New employee appears in User Management list; can log in successfully.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-13
+  Condition       : Owner attempts to delete their own account.
+  Expected Output : Error "You cannot remove yourself." Account remains active.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-14
+  Condition       : User updates their own display name in the Settings page.
+  Expected Output : Sidebar and profile section reflect the new name after saving.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+TC-15
+  Condition       : Product quantity drops below 10 after a completed sale.
+  Expected Output : Low Stock alert card appears on the Owner Dashboard for that product.
+  Actual Output   : ___________________________________________
+  Remark          : ___________________________________________
+
+
+CHAPTER 8: CONCLUSION AND DISCUSSION
+=====================================
+
+8.1 SELF ANALYSIS OF PROJECT VIABILITIES
+------------------------------------------
+RetailFlow successfully demonstrates that a full-featured retail management system
+can be built using entirely open-source technology at zero runtime cost. All 13
+functional requirements defined in Chapter 4 have been implemented and validated.
+The role-based access model is clean and extensible. The use of SQLite provides
+sufficient database capability for single-shop to small-multi-shop operations
+without infrastructure overhead.
+
+The system is viable for deployment and practical use by a small retail business
+today. Its architecture is also sound enough to support a migration path to a more
+scalable database such as PostgreSQL if user load demands grow.
+
+8.2 PROBLEM ENCOUNTERED AND POSSIBLE SOLUTIONS
+------------------------------------------------
+PROBLEM 1 — CART STATE LOST ON BROWSER REFRESH:
+  Encountered:
+    During employee checkout, accidentally refreshing the browser cleared the
+    cart entirely, losing all selected items.
+  Solution Implemented:
+    React state was combined with a sessionStorage-based cart persistence
+    mechanism to survive page refreshes within the same browser session.
+
+PROBLEM 2 — RACE CONDITION RISK ON CONCURRENT SALES:
+  Encountered:
+    Theoretically, two employees checking out the same product simultaneously
+    could both pass the stock check before either of them updates the quantity.
+  Solution Implemented:
+    The entire sale creation process (stock validation, stock deduction, and
+    INSERT into sales) was wrapped in a db.transaction() block using
+    better-sqlite3's atomic transaction API, preventing race conditions at
+    the database level.
+
+PROBLEM 3 — MODULE NOT FOUND ERRORS AFTER NPM INSTALL:
+  Encountered:
+    Helmet and other dependencies failed to resolve when a separate node_modules
+    folder existed inside the backend directory. The npm workspace setup requires
+    a single root-level install.
+  Solution Implemented:
+    All nested node_modules folders inside backend and frontend were deleted.
+    Dependencies resolved correctly via the single root-level npm install command.
+
+8.3 SUMMARY OF PROJECT WORK
+-----------------------------
+RetailFlow was designed, developed, tested, and deployed as a complete retail
+management SPA and API system. It covers user authentication, multi-role access
+control, product management, POS billing, sales analytics, employee management,
+and self-service account settings. The system follows modern web development
+best practices including JWT security, bcrypt hashing, RESTful API design,
+atomic database transactions, input validation, and CORS protection.
+
+
+CHAPTER 9: LIMITATION AND FUTURE ENHANCEMENT
+=============================================
+
+CURRENT LIMITATIONS:
+  1. SQLite is a file-based database. It is not suitable for high-concurrency
+     multi-server deployments. A migration to PostgreSQL would be needed for
+     enterprise-level scale.
+  2. The system requires an active network connection. If the backend server
+     is unreachable, the frontend shows network errors and no data loads.
+  3. The system generates and stores bill records internally but does not
+     produce a printable thermal receipt or downloadable PDF invoice.
+  4. Prices are stored as-is; no GST, VAT, or discount calculation is applied
+     to sales totals at the time of billing.
+  5. Product entry requires manual search; no barcode scanner hardware
+     integration exists in the current version.
+  6. The system is calibrated for INR (Indian Rupee) only; no multi-currency
+     support is available.
+
+FUTURE ENHANCEMENTS:
+  1.  Migrate the database to PostgreSQL for better concurrency and cloud hosting.
+  2.  Add thermal receipt printer support via browser WebUSB or WebSerial APIs.
+  3.  Implement PDF invoice generation for each completed sale.
+  4.  Add GST calculation and per-line tax columns to the invoice.
+  5.  Add barcode scanning via a webcam-based library such as QuaggaJS.
+  6.  Implement a customer loyalty points and rewards system.
+  7.  Add a purchase order and vendor management module for stock replenishment.
+  8.  Develop a React Native mobile app for on-the-go owner analytics.
+  9.  Add email and SMS customer bill notifications via Twilio or SendGrid.
+  10. Export sales data to Excel (XLSX) or PDF format for accounting purposes.
+
+
+XIII. BIBLIOGRAPHY
+==================
+[1]  React Documentation. (2024). React — A JavaScript library for building user
+     interfaces. Retrieved from https://react.dev
+
+[2]  Vitejs.dev. (2024). Vite — Next Generation Frontend Tooling.
+     Retrieved from https://vitejs.dev
+
+[3]  Node.js Foundation. (2024). Node.js API Reference Documentation.
+     Retrieved from https://nodejs.org/docs/latest/api/
+
+[4]  Express.js. (2024). Fast, unopinionated, minimalist web framework for Node.js.
+     Retrieved from https://expressjs.com
+
+[5]  SQLite Consortium. (2024). SQLite Home Page.
+     Retrieved from https://www.sqlite.org/index.html
+
+[6]  better-sqlite3. (2024). The fastest and simplest library for SQLite3 in Node.js.
+     Retrieved from https://github.com/WiseLibs/better-sqlite3
+
+[7]  Auth0 Blog. (2023). Introduction to JSON Web Tokens.
+     Retrieved from https://jwt.io/introduction
+
+[8]  bcrypt.js. (2024). bcryptjs npm package.
+     Retrieved from https://www.npmjs.com/package/bcryptjs
+
+[9]  Tailwind CSS. (2024). Rapidly build modern websites without ever leaving your HTML.
+     Retrieved from https://tailwindcss.com
+
+[10] Chart.js. (2024). Simple yet flexible JavaScript charting library.
+     Retrieved from https://www.chartjs.org
+
+[11] React Router. (2024). Declarative Routing for React.
+     Retrieved from https://reactrouter.com
+
+[12] OWASP. (2023). OWASP Top 10 Web Application Security Risks.
+     Retrieved from https://owasp.org/www-project-top-ten/
+
+[13] Fielding, R. T. (2000). Architectural Styles and the Design of Network-based
+     Software Architectures (REST dissertation). University of California, Irvine.
+
+[14] Berman, B., & Evans, J. R. (2018). Retail Management: A Strategic Approach
+     (13th ed.). Pearson Education.
+
+
+================================================================================
+  END OF DOCUMENTATION — RetailFlow
+================================================================================
+
+
+================================================================================
+  APPENDIX — UML DIAGRAM SOURCE CODE (PlantUML)
+================================================================================
+
+  NOTE: The following PlantUML source code can be rendered at https://plantuml.com
+  or any compatible IDE plugin (VS Code PlantUML extension, IntelliJ, etc.).
+  Paste the code block including @start and @end tags to generate each diagram.
+
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+  FIGURE 1 — PROJECT SCHEDULE GANTT CHART
+--------------------------------------------------------------------------------
+
+@startgantt
+title RetailFlow — Project Schedule
+
+Project starts 2025-01-01
+
+[Sprint 1: Requirements and DB Design]     lasts 7 days
+[Sprint 2: Backend API Development]        lasts 21 days
+[Sprint 3: POS Cart and Sale Logic]        lasts 14 days
+[Sprint 4: Dashboards and Analytics]       lasts 14 days
+[Sprint 5: Manager Dashboard and Users]    lasts 14 days
+[Sprint 6: Settings, Polishing, Deploy]    lasts 14 days
+
+[Sprint 2: Backend API Development]        starts at [Sprint 1: Requirements and DB Design]'s end
+[Sprint 3: POS Cart and Sale Logic]        starts at [Sprint 2: Backend API Development]'s end
+[Sprint 4: Dashboards and Analytics]       starts at [Sprint 3: POS Cart and Sale Logic]'s end
+[Sprint 5: Manager Dashboard and Users]    starts at [Sprint 4: Dashboards and Analytics]'s end
+[Sprint 6: Settings, Polishing, Deploy]    starts at [Sprint 5: Manager Dashboard and Users]'s end
+
+@endgantt
+
+
+--------------------------------------------------------------------------------
+  FIGURE 2 — SYSTEM ARCHITECTURE OVERVIEW DIAGRAM
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — System Architecture Overview
+
+skinparam rectangle {
+  BackgroundColor #F0F4FF
+  BorderColor     #3366CC
+  FontSize        13
+}
+skinparam arrow {
+  Color           #3366CC
+}
+
+actor "Manager"  as MGR
+actor "Owner"    as OWN
+actor "Employee" as EMP
+
+rectangle "PRESENTATION LAYER\n(React + Vite SPA)\nPort 5173" as FE {
+  rectangle "Login Page"           as LOGIN
+  rectangle "Manager Dashboard"    as MGRD
+  rectangle "Owner Dashboard"      as OWND
+  rectangle "Employee / POS Page"  as EMPD
+}
+
+rectangle "API LAYER\n(Node.js + Express)\nPort 3001" as BE {
+  rectangle "POST /api/auth/email-login" as AUTH
+  rectangle "GET/POST/PUT/DELETE /api/products" as PROD
+  rectangle "POST/GET /api/sales"        as SALES
+  rectangle "GET/POST/DELETE /api/users" as USERS
+  rectangle "GET/POST /api/shops"        as SHOPS
+}
+
+rectangle "DATA LAYER\n(SQLite — retailflow.db)" as DB {
+  rectangle "shops"    as T1
+  rectangle "users"    as T2
+  rectangle "products" as T3
+  rectangle "sales"    as T4
+}
+
+MGR --> LOGIN
+OWN --> LOGIN
+EMP --> LOGIN
+
+LOGIN --> AUTH   : POST email + password
+MGRD  --> SHOPS  : Create/Assign
+OWND  --> PROD   : CRUD products
+OWND  --> USERS  : Manage employees
+EMPD  --> SALES  : Submit sale
+
+AUTH  --> T2
+PROD  --> T3
+SALES --> T4
+SALES --> T3 : Deduct stock
+USERS --> T2
+SHOPS --> T1
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 3 — ACTIVITY DIAGRAM: POS CHECKOUT FLOW
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Activity Diagram: POS Checkout Flow
+
+skinparam activity {
+  BackgroundColor #E8F4FD
+  BorderColor     #2980B9
+  FontSize        12
+}
+
+start
+:Employee logs in with email and password;
+:System validates JWT and routes to /employee;
+:Employee searches for a product by name;
+:Employee selects product and sets quantity;
+:Product added to cart;
+
+if (More items to add?) then (yes)
+  :Continue searching for next product;
+  :Add next product to cart;
+else (no)
+  :Enter customer name and phone (optional);
+  :Click "Complete Sale" button;
+  :System validates JWT token;
+
+  if (Cart is empty?) then (yes)
+    :Show error — "Sale must include at least one item";
+    stop
+  else (no)
+    :For each item: check available stock;
+
+    if (Insufficient stock for any item?) then (yes)
+      :Show error — "Insufficient stock for [product]";
+      stop
+    else (no)
+      :Begin DB atomic transaction;
+      :Deduct quantity for every cart item in products table;
+      :Generate unique bill number (BILL-XXXXXXXX);
+      :INSERT sale record into sales table;
+      :Commit transaction;
+      :Return 201 Created with sale record;
+      :Show success toast notification;
+      :Clear cart;
+      stop
+    endif
+  endif
+endif
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 4 — ACTIVITY DIAGRAM: LOGIN AND ROLE-BASED REDIRECT FLOW
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Activity Diagram: Login and Role-Based Redirect Flow
+
+skinparam activity {
+  BackgroundColor #F0FFF0
+  BorderColor     #27AE60
+  FontSize        12
+}
+
+start
+:User opens the application in browser;
+:User enters email and password on Login page;
+:Frontend sends POST /api/auth/email-login;
+:Server queries users table WHERE email matches;
+
+if (User found in database?) then (no)
+  :Return 401 — "No account found for this email";
+  :Show error on login page;
+  stop
+else (yes)
+  :bcrypt.compare(inputPassword, storedHash);
+
+  if (Password matches?) then (no)
+    :Return 401 — "Incorrect password";
+    :Show error on login page;
+    stop
+  else (yes)
+    :jwt.sign({ id, name, role }, JWT_SECRET, expiresIn: 24h);
+    :Return 200 with { token, user: { id, name, role, email } };
+    :Frontend stores JWT in localStorage;
+    :Read role from token payload;
+
+    if (role == "manager") then (yes)
+      :Navigate to /manager — Manager Dashboard;
+      stop
+    elseif (role == "owner") then (yes)
+      :Navigate to /owner — Owner Dashboard;
+      stop
+    else (role == "employee")
+      :Navigate to /employee — Employee POS;
+      stop
+    endif
+  endif
+endif
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 5 — USE CASE DIAGRAM
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Use Case Diagram
+
+skinparam usecase {
+  BackgroundColor #FFF9E6
+  BorderColor     #E67E22
+  FontSize        12
+}
+
+left to right direction
+
+actor Manager  as MGR
+actor Owner    as OWN
+actor Employee as EMP
+actor System   as SYS
+
+rectangle "RetailFlow System" {
+
+  usecase "Login"                     as UC1
+  usecase "Logout"                    as UC2
+  usecase "Create Shop"               as UC3
+  usecase "Assign Owner to Shop"      as UC4
+  usecase "Add Product"               as UC5
+  usecase "Edit Product"              as UC6
+  usecase "Delete Product"            as UC7
+  usecase "Create Employee Account"   as UC8
+  usecase "Remove Employee Account"   as UC9
+  usecase "Process POS Sale"          as UC10
+  usecase "View Sales History"        as UC11
+  usecase "View Bills History"        as UC12
+  usecase "View Dashboard Analytics"  as UC13
+  usecase "Update Own Profile"        as UC14
+  usecase "Validate JWT Token"        as UC15
+
+}
+
+MGR --> UC1
+MGR --> UC2
+MGR --> UC3
+MGR --> UC4
+MGR --> UC11
+
+OWN --> UC1
+OWN --> UC2
+OWN --> UC5
+OWN --> UC6
+OWN --> UC7
+OWN --> UC8
+OWN --> UC9
+OWN --> UC11
+OWN --> UC13
+OWN --> UC14
+
+EMP --> UC1
+EMP --> UC2
+EMP --> UC10
+EMP --> UC12
+EMP --> UC14
+
+UC1  ..> UC15 : <<include>>
+UC10 ..> UC15 : <<include>>
+UC11 ..> UC15 : <<include>>
+UC13 ..> UC15 : <<include>>
+
+SYS --> UC15
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 6 — CLASS DIAGRAM
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Class Diagram
+
+skinparam class {
+  BackgroundColor #EEF2FF
+  BorderColor     #5C6BC0
+  FontSize        12
+}
+
+class User {
+  + id : String
+  + name : String
+  + email : String
+  + phone : String
+  + role : String
+  + passwordHash : String
+  + shopId : String
+  --
+  + login(email, password) : JWT
+  + updateProfile(name, email, phone) : void
+  + changePassword(current, newPwd) : void
+}
+
+class Shop {
+  + id : String
+  + name : String
+  + createdAt : String
+  --
+  + create(name) : Shop
+  + listUsers() : User[]
+  + listProducts() : Product[]
+}
+
+class Product {
+  + id : String
+  + name : String
+  + price : Float
+  + quantity : Integer
+  + category : String
+  + shopId : String
+  + createdAt : String
+  + updatedAt : String
+  --
+  + add(name, price, qty, category) : Product
+  + edit(id, name, price, qty) : Product
+  + delete(id) : void
+  + deductStock(qty) : void
+}
+
+class Sale {
+  + id : String
+  + billNumber : String
+  + dateTime : String
+  + items : JSON
+  + totalAmount : Float
+  + customerName : String
+  + customerPhone : String
+  + createdBy : String
+  + shopId : String
+  --
+  + create(items, customer, userId) : Sale
+  + fetchAll() : Sale[]
+  + fetchByUser(userId) : Sale[]
+}
+
+class Cart {
+  + items : CartItem[]
+  + total : Float
+  --
+  + addItem(product, qty) : void
+  + removeItem(productId) : void
+  + updateQty(productId, qty) : void
+  + clear() : void
+  + submitSale(customerName, phone) : Sale
+}
+
+class CartItem {
+  + productId : String
+  + productName : String
+  + price : Float
+  + quantity : Integer
+  + total : Float
+}
+
+Shop "1" o-- "0..*" User     : employs
+Shop "1" o-- "0..*" Product  : stocks
+Shop "1" o-- "0..*" Sale     : records
+User "1" o-- "0..*" Sale     : creates
+Cart "1" *-- "1..*" CartItem : contains
+Sale ..> CartItem             : serializes as JSON
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 7 — SEQUENCE DIAGRAM: SALE CREATION FLOW
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Sequence Diagram: Sale Creation Flow
+
+skinparam sequence {
+  ArrowColor       #2C3E50
+  ParticipantBackgroundColor #D6EAF8
+  ParticipantBorderColor     #2980B9
+  LifeLineBorderColor        #2980B9
+  FontSize         12
+}
+
+actor       "Employee"           as EMP
+participant "BillingCart\n(React)" as CART
+participant "api.js\n(Frontend)"  as API
+participant "Express\n/api/sales" as SRV
+participant "authMiddleware"      as AUTH
+database    "SQLite DB"           as DB
+
+EMP  -> CART : Click "Complete Sale"
+CART -> API  : POST /api/sales\n{ items[], customerName, customerPhone }
+API  -> SRV  : HTTP POST with Authorization: Bearer <JWT>
+
+SRV  -> AUTH : Verify JWT token
+AUTH -> SRV  : Return decoded { id, name, role }
+
+loop For each item in items[]
+  SRV  -> DB : SELECT * FROM products WHERE id = item.productId
+  DB   -> SRV : Return product record
+  SRV  -> SRV : Check item.quantity <= product.quantity
+  SRV  -> SRV : Accumulate totalAmount
+end
+
+SRV  -> DB : BEGIN TRANSACTION
+loop For each item
+  SRV -> DB : UPDATE products SET quantity = quantity - item.qty
+end
+SRV  -> DB : INSERT INTO sales (billNumber, items JSON, totalAmount, ...)
+SRV  -> DB : COMMIT TRANSACTION
+DB   -> SRV : Return new sale record
+
+SRV  -> API  : 201 Created — { id, billNumber, total, items }
+API  -> CART : Resolve response
+CART -> EMP  : Show success toast notification
+CART -> EMP  : Clear cart
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 8 — SEQUENCE DIAGRAM: LOGIN AUTHENTICATION FLOW
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Sequence Diagram: Login Authentication Flow
+
+skinparam sequence {
+  ArrowColor       #2C3E50
+  ParticipantBackgroundColor #D5F5E3
+  ParticipantBorderColor     #27AE60
+  LifeLineBorderColor        #27AE60
+  FontSize         12
+}
+
+actor       "User"                    as USR
+participant "Login Page\n(React)"     as UI
+participant "api.js\n(Frontend)"      as API
+participant "Express\n/api/auth"      as SRV
+database    "SQLite DB\n(users table)" as DB
+participant "JWT Library"             as JWT
+
+USR -> UI  : Enter email and password
+USR -> UI  : Click "Sign In"
+
+UI  -> API : POST /api/auth/email-login\n{ email, password }
+API -> SRV : HTTP POST (no auth header needed)
+
+SRV -> DB  : SELECT * FROM users WHERE LOWER(email) = ?
+DB  -> SRV : Return user record (or NULL)
+
+alt User not found
+  SRV -> API : 401 — "No account found for this email"
+  API -> UI  : Reject with error message
+  UI  -> USR : Display error on Login page
+else User found
+  SRV -> SRV : bcrypt.compare(inputPassword, user.password)
+
+  alt Password does not match
+    SRV -> API : 401 — "Incorrect password"
+    API -> UI  : Reject with error message
+    UI  -> USR : Display error on Login page
+  else Password matches
+    SRV -> JWT : jwt.sign({ id, name, role }, JWT_SECRET, expiresIn: 24h)
+    JWT -> SRV : Return signed token string
+
+    SRV -> API : 200 OK — { token, user: { id, name, role, email } }
+    API -> UI  : Resolve with token and user object
+    UI  -> UI  : Store token in localStorage
+    UI  -> USR : Navigate to role-specific dashboard\n(/manager | /owner | /employee)
+  end
+end
+
+@enduml
+
+
+--------------------------------------------------------------------------------
+  FIGURE 9 — ENTITY RELATIONSHIP (ER) DIAGRAM
+--------------------------------------------------------------------------------
+
+@startuml
+title RetailFlow — Entity Relationship Diagram
+
+skinparam class {
+  BackgroundColor #FFF3E0
+  BorderColor     #E65100
+  FontSize        12
+}
+
+entity "shops" as SHOPS {
+  * id         : TEXT  <<PK>>
+  --
+    name       : TEXT  (NOT NULL, UNIQUE)
+    createdAt  : TEXT
+}
+
+entity "users" as USERS {
+  * id         : TEXT  <<PK>>
+  --
+    name       : TEXT  (NOT NULL, UNIQUE)
+    password   : TEXT  (bcrypt hash)
+    role       : TEXT  (manager | owner | employee)
+    email      : TEXT
+    phone      : TEXT
+    shop_id    : TEXT  <<FK — shops.id>>
+}
+
+entity "products" as PRODUCTS {
+  * id         : TEXT  <<PK>>
+  --
+    name       : TEXT  (NOT NULL)
+    price      : REAL  (>= 0)
+    quantity   : INTEGER (>= 0)
+    category   : TEXT
+    shop_id    : TEXT  <<FK — shops.id>>
+    createdAt  : TEXT
+    updatedAt  : TEXT
+}
+
+entity "sales" as SALES {
+  * id            : TEXT  <<PK>>
+  --
+    billNumber    : TEXT
+    dateTime      : TEXT  (NOT NULL)
+    items         : TEXT  (JSON array of line items)
+    totalAmount   : REAL
+    customerName  : TEXT
+    customerPhone : TEXT
+    createdBy     : TEXT  <<FK — users.id>>
+    sessionId     : TEXT
+    shop_id       : TEXT  <<FK — shops.id>>
+}
+
+SHOPS  ||--o{ USERS    : "has (Owner / Employee)"
+SHOPS  ||--o{ PRODUCTS : "stocks"
+SHOPS  ||--o{ SALES    : "records"
+USERS  ||--o{ SALES    : "creates"
+
+note bottom of SALES
+  items column stores a JSON array of line items.
+  Each item contains: productId, productName,
+  price, quantity, and total.
+  This preserves an immutable receipt snapshot.
+end note
+
+note bottom of USERS
+  Manager role has shop_id = NULL.
+  Managers oversee all shops globally.
+end note
+
+@enduml
+
+
+================================================================================
+  END OF UML APPENDIX — RetailFlow
+================================================================================
+  To render diagrams: visit https://plantuml.com/plantuml/uml/
+  or use the PlantUML extension in VS Code / IntelliJ IDEA.
+================================================================================

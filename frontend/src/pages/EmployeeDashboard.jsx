@@ -8,8 +8,9 @@ import { useAppContext } from '../context/AppContext';
 import { isToday, isThisWeek } from '../utils/helpers';
 
 const EmployeeDashboard = () => {
-  const { products, getSales, getLowStockProducts, loading } = useAppContext();
+  const { products, getSales, loading } = useAppContext();
   const [showBilling, setShowBilling] = useState(false);
+  const [showLowStockDetails, setShowLowStockDetails] = useState(false);
 
   // Get session sales (employee sees only their session sales)
   const sessionSales = getSales('employee');
@@ -32,7 +33,7 @@ const EmployeeDashboard = () => {
         return sum + sale.items.reduce((s, item) => s + item.quantity, 0);
       }, 0);
 
-    const lowStockCount = getLowStockProducts().length;
+    const lowStockCount = products.filter(p => p.quantity < 5).length;
 
     return {
       revenueToday,
@@ -40,7 +41,7 @@ const EmployeeDashboard = () => {
       soldWeek,
       lowStockCount
     };
-  }, [sessionSales, getLowStockProducts]);
+  }, [sessionSales, products]);
 
   // Calculate best/worst sellers from session sales
   const { bestSellers, worstSellers } = useMemo(() => {
@@ -86,6 +87,30 @@ const EmployeeDashboard = () => {
     { label: 'Stock', key: 'stock', render: (value) => value.toLocaleString() },
   ];
 
+  const lowStockColumns = [
+    { label: '#', key: 'id' },
+    { label: 'Product Name', key: 'name' },
+    { label: 'Category', key: 'category' },
+    {
+      label: 'Current Stock',
+      key: 'stock',
+      render: (value) => <span className="text-danger-600 font-semibold">{value}</span>,
+    },
+    { label: 'Reorder Level', key: 'reorderLevel' },
+  ];
+
+  const lowStockItems = useMemo(() => {
+    return products
+      .filter(p => p.quantity < 5)
+      .map((product, index) => ({
+        id: index + 1,
+        name: product.name,
+        category: product.category || 'N/A',
+        stock: product.quantity,
+        reorderLevel: 10,
+      }));
+  }, [products]);
+
   const handleSaleComplete = () => {
     // Optionally refresh or show notification
     setShowBilling(false);
@@ -124,11 +149,22 @@ const EmployeeDashboard = () => {
           value={metrics.soldWeek}
           icon="📊"
         />
-        <KPICard
-          title="Low Stock Alerts"
-          value={metrics.lowStockCount}
-          icon="⚠️"
-        />
+        <div
+          className="cursor-pointer"
+          onClick={() => setShowLowStockDetails(v => !v)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') setShowLowStockDetails(v => !v);
+          }}
+          aria-label="Show low stock products"
+        >
+          <KPICard
+            title="Low Stock Alerts"
+            value={metrics.lowStockCount}
+            icon="⚠️"
+          />
+        </div>
       </div>
 
       {/* Action Buttons Section */}
@@ -145,6 +181,20 @@ const EmployeeDashboard = () => {
           Request Stock Update
         </button>
       </div>
+
+      {/* Low Stock Details (click KPI to toggle) */}
+      {showLowStockDetails && (
+        <div className="mb-10">
+          {lowStockItems.length > 0 ? (
+            <DataTable title="Low Stock Products" columns={lowStockColumns} data={lowStockItems} />
+          ) : (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-5">Low Stock Products</h3>
+              <p className="text-gray-500 text-center py-8">No products are currently low on stock.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Billing Section (toggleable) */}
       {showBilling && (

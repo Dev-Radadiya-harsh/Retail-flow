@@ -6,12 +6,19 @@ const { ownerOnly } = require('../middleware/roleGuard');
 
 const router = express.Router();
 
+function getShopIdForUser(userId) {
+  const row = db.prepare('SELECT shop_id FROM users WHERE id = ?').get(userId);
+  return row?.shop_id ?? null;
+}
+
 // GET /api/products/low-stock — returns products with quantity < 10
 router.get('/low-stock', authMiddleware, (req, res) => {
   try {
-    const items = db.prepare(
-      'SELECT * FROM products WHERE quantity < 10 ORDER BY quantity ASC'
-    ).all();
+    const shopId = getShopIdForUser(req.user.id);
+    const items =
+      req.user.role === 'manager' || !shopId
+        ? db.prepare('SELECT * FROM products WHERE quantity < 5 ORDER BY quantity ASC').all()
+        : db.prepare('SELECT * FROM products WHERE shop_id = ? AND quantity < 5 ORDER BY quantity ASC').all(shopId);
     res.json(items);
   } catch (err) {
     console.error('GET /products/low-stock error:', err);
@@ -22,7 +29,11 @@ router.get('/low-stock', authMiddleware, (req, res) => {
 // GET /api/products — all authenticated users
 router.get('/', authMiddleware, (req, res) => {
   try {
-    const products = db.prepare('SELECT * FROM products ORDER BY createdAt DESC').all();
+    const shopId = getShopIdForUser(req.user.id);
+    const products =
+      req.user.role === 'manager' || !shopId
+        ? db.prepare('SELECT * FROM products ORDER BY createdAt DESC').all()
+        : db.prepare('SELECT * FROM products WHERE shop_id = ? ORDER BY createdAt DESC').all(shopId);
     res.json(products);
   } catch (err) {
     console.error('GET /products error:', err);
@@ -48,11 +59,14 @@ router.post('/', authMiddleware, ownerOnly, (req, res) => {
     const now = new Date().toISOString();
     const id = uuidv4();
 
-    db.prepare(
-      'INSERT INTO products (id, name, price, quantity, category, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(id, name.trim(), Number(price), Number(quantity), category || '', now, now);
+    const shopId = getShopIdForUser(req.user.id);
+    if (!shopId) return res.status(400).json({ error: 'Owner not tied to a shop' });
 
-    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    db.prepare(
+      'INSERT INTO products (id, name, price, quantity, category, shop_id, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, name.trim(), Number(price), Number(quantity), category || '', shopId, now, now);
+
+    const product = db.prepare('SELECT * FROM products WHERE id = ? AND shop_id = ?').get(id, shopId);
     res.status(201).json(product);
   } catch (err) {
     console.error('POST /products error:', err);
@@ -66,7 +80,10 @@ router.put('/:id', authMiddleware, ownerOnly, (req, res) => {
     const { id } = req.params;
     const { name, price, quantity, category } = req.body;
 
-    const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    const shopId = getShopIdForUser(req.user.id);
+    if (!shopId) return res.status(400).json({ error: 'Owner not tied to a shop' });
+
+    const existing = db.prepare('SELECT * FROM products WHERE id = ? AND shop_id = ?').get(id, shopId);
     if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -84,10 +101,10 @@ router.put('/:id', authMiddleware, ownerOnly, (req, res) => {
     const updatedAt = new Date().toISOString();
 
     db.prepare(
-      'UPDATE products SET name = ?, price = ?, quantity = ?, category = ?, updatedAt = ? WHERE id = ?'
-    ).run(name.trim(), Number(price), Number(quantity), category || '', updatedAt, id);
+      'UPDATE products SET name = ?, price = ?, quantity = ?, category = ?, updatedAt = ? WHERE id = ? AND shop_id = ?'
+    ).run(name.trim(), Number(price), Number(quantity), category || '', updatedAt, id, shopId);
 
-    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    const product = db.prepare('SELECT * FROM products WHERE id = ? AND shop_id = ?').get(id, shopId);
     res.json(product);
   } catch (err) {
     console.error(`PUT /products/${req.params.id} error:`, err);
@@ -100,12 +117,15 @@ router.delete('/:id', authMiddleware, ownerOnly, (req, res) => {
   try {
     const { id } = req.params;
 
-    const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    const shopId = getShopIdForUser(req.user.id);
+    if (!shopId) return res.status(400).json({ error: 'Owner not tied to a shop' });
+
+    const existing = db.prepare('SELECT * FROM products WHERE id = ? AND shop_id = ?').get(id, shopId);
     if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    db.prepare('DELETE FROM products WHERE id = ?').run(id);
+    db.prepare('DELETE FROM products WHERE id = ? AND shop_id = ?').run(id, shopId);
     res.json({ message: 'Product deleted successfully' });
   } catch (err) {
     console.error(`DELETE /products/${req.params.id} error:`, err);

@@ -5,6 +5,11 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
+function getShopIdForUser(userId) {
+  const row = db.prepare('SELECT shop_id FROM users WHERE id = ?').get(userId);
+  return row?.shop_id ?? null;
+}
+
 // POST /api/sales — create sale + deduct stock (all authenticated users)
 router.post('/', authMiddleware, (req, res) => {
   try {
@@ -16,11 +21,16 @@ router.post('/', authMiddleware, (req, res) => {
 
     // Validate all items and check stock in a transaction
     const createSale = db.transaction(() => {
+      const shopId = getShopIdForUser(req.user.id);
+      if (!shopId) {
+        throw new Error('User not tied to a shop');
+      }
+
       let totalAmount = 0;
       const validatedItems = [];
 
       for (const item of items) {
-        const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
+        const product = db.prepare('SELECT * FROM products WHERE id = ? AND shop_id = ?').get(item.productId, shopId);
 
         if (!product) {
           throw new Error(`Product not found: ${item.productId}`);
@@ -45,8 +55,8 @@ router.post('/', authMiddleware, (req, res) => {
 
         // Deduct stock
         db.prepare(
-          'UPDATE products SET quantity = quantity - ?, updatedAt = ? WHERE id = ?'
-        ).run(item.quantity, new Date().toISOString(), product.id);
+          'UPDATE products SET quantity = quantity - ?, updatedAt = ? WHERE id = ? AND shop_id = ?'
+        ).run(item.quantity, new Date().toISOString(), product.id, shopId);
       }
 
       // Record the sale
@@ -55,7 +65,7 @@ router.post('/', authMiddleware, (req, res) => {
       const billNumber = `BILL-${Date.now().toString().slice(-8)}`;
 
       db.prepare(
-        'INSERT INTO sales (id, billNumber, dateTime, items, totalAmount, customerName, customerPhone, createdBy, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO sales (id, billNumber, dateTime, items, totalAmount, customerName, customerPhone, createdBy, sessionId, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
       ).run(
         saleId,
         billNumber,
@@ -65,10 +75,11 @@ router.post('/', authMiddleware, (req, res) => {
         String(customerName || '').trim(),
         String(customerPhone || '').trim(),
         req.user.id,
-        sessionId || null
+        sessionId || null,
+        shopId
       );
 
-      return db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
+      return db.prepare('SELECT * FROM sales WHERE id = ? AND shop_id = ?').get(saleId, shopId);
     });
 
     const sale = createSale();
@@ -90,12 +101,22 @@ router.get('/', authMiddleware, (req, res) => {
   try {
     let sales;
 
-    if (req.user.role === 'owner' || req.user.role === 'manager') {
+    if (req.user.role === 'manager') {
       sales = db.prepare('SELECT * FROM sales ORDER BY dateTime DESC').all();
     } else {
-      sales = db.prepare(
-        'SELECT * FROM sales WHERE createdBy = ? ORDER BY dateTime DESC'
-      ).all(req.user.id);
+      const shopId = getShopIdForUser(req.user.id);
+      if (!shopId) {
+        sales = [];
+      } else if (req.user.role === 'employee') {
+        sales = db.prepare(
+          'SELECT * FROM sales WHERE shop_id = ? AND createdBy = ? ORDER BY dateTime DESC'
+        ).all(shopId, req.user.id);
+      } else {
+        // owner
+        sales = db.prepare(
+          'SELECT * FROM sales WHERE shop_id = ? ORDER BY dateTime DESC'
+        ).all(shopId);
+      }
     }
 
     // Parse items JSON for each sale

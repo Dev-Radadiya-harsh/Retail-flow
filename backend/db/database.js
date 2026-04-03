@@ -82,4 +82,40 @@ addColumnIfMissing('sales', 'billNumber', "TEXT");
 addColumnIfMissing('sales', 'customerName', "TEXT DEFAULT ''");
 addColumnIfMissing('sales', 'customerPhone', "TEXT DEFAULT ''");
 
+// Backfill sales.shop_id for rows created before we started scoping by shop.
+// Older code inserted sales with shop_id = NULL; we can infer it from the user who created the sale.
+try {
+  db.prepare(`
+    UPDATE sales
+    SET shop_id = (
+      SELECT shop_id FROM users WHERE users.id = sales.createdBy
+    )
+    WHERE shop_id IS NULL
+  `).run();
+} catch (err) {
+  // Not fatal for new deployments; just log.
+  console.warn('[database] shop_id backfill skipped:', err?.message || err);
+}
+
+// Backfill products.shop_id based on sales history.
+// Products created before scoping may have shop_id = NULL; once they appear in a sale,
+// we can infer their shop from the sale.shop_id.
+try {
+  db.prepare(`
+    UPDATE products
+    SET shop_id = (
+      SELECT s.shop_id
+      FROM sales s
+      JOIN json_each(s.items) je
+      WHERE products.shop_id IS NULL
+        AND json_extract(je.value, '$.productId') = products.id
+        AND s.shop_id IS NOT NULL
+      LIMIT 1
+    )
+    WHERE shop_id IS NULL
+  `).run();
+} catch (err) {
+  console.warn('[database] products.shop_id backfill skipped:', err?.message || err);
+}
+
 module.exports = db;

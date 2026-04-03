@@ -18,6 +18,7 @@ const OwnerDashboard = () => {
   const [modalMode, setModalMode] = useState('add');
   const [modalKey, setModalKey] = useState(0);
   const [deletingId, setDeletingId] = useState(null);
+  const [showLowStockDetails, setShowLowStockDetails] = useState(false);
 
   // Calculate KPIs from real data
   const kpis = useMemo(() => {
@@ -253,11 +254,22 @@ const OwnerDashboard = () => {
           value={kpis.todayItemsSold}
           icon="📦"
         />
-        <KPICard
-          title="Low Stock Products"
-          value={kpis.lowStockCount}
-          icon="⚠️"
-        />
+        <div
+          className="cursor-pointer"
+          onClick={() => setShowLowStockDetails(v => !v)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') setShowLowStockDetails(v => !v);
+          }}
+          aria-label="Show low stock products"
+        >
+          <KPICard
+            title="Low Stock Products"
+            value={kpis.lowStockCount}
+            icon="⚠️"
+          />
+        </div>
         <KPICard
           title="Inventory Health Score"
           value={kpis.inventoryHealth}
@@ -340,12 +352,19 @@ const OwnerDashboard = () => {
             data={worstSellers}
           />
         )}
-        {lowStockItems.length > 0 && (
-          <DataTable
-            title="Low Stock / Near Out-of-Stock Products"
-            columns={lowStockColumns}
-            data={lowStockItems}
-          />
+        {showLowStockDetails && (
+          lowStockItems.length > 0 ? (
+            <DataTable
+              title="Low Stock / Near Out-of-Stock Products"
+              columns={lowStockColumns}
+              data={lowStockItems}
+            />
+          ) : (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-5">Low Stock / Near Out-of-Stock Products</h3>
+              <p className="text-gray-500 text-center py-8">Nothing is low on stock right now.</p>
+            </div>
+          )
         )}
       </div>
 
